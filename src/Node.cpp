@@ -1,15 +1,10 @@
 #include <iostream>
 #include <vector>
-#include <algorithm>
 #include "../include/Node.hpp"
 using namespace std;
-
+//TODO: Change all call by values to call by reference
 class Node{
-
-    
-
     public:  
-    // Parameterised Constructor
     Node(int identity)
     {
         this->id = identity;
@@ -25,7 +20,7 @@ class Node{
     }
 
     int getId(){
-        return this->id;
+        return id;
     }
 
     void addNeighbour(int newneigh){

@@ -1,6 +1,5 @@
 #include <iostream>
 #include <vector>
-#include <algorithm>
 
 class Node
 {
@@ -15,6 +14,6 @@ class Node
 
     private:
         bool state;
-        int id;
-        vector<int> neighbours;
+        int id; //Unique ID for every node
+        std::vector<int> neighbours;
 };
