@@ -6,34 +6,47 @@ using namespace std;
 
 class Node{
 
-    int state, id;
+    
 
-    public:
-    Node* neighbours;
-  
-    // Default constructor
-    Node()
-    {
-        data = 0;
-        next = NULL;
-    }
-  
+    public:  
     // Parameterised Constructor
     Node(int identity)
     {
         this->id = identity;
-        this->next = NULL;
-        this->state = 0;
+        this->state = false;
     }
+
+    bool getState(){
+        return this->state;
+    }
+
+    void changeState(){
+        this->state=!(this->state);
+    }
+
+    int getId(){
+        return this->id;
+    }
+
+    void addNeighbour(int newneigh){
+        for(int i=0; i<this->neighbours.size(); i++){
+            if(neighbours[i]==newneigh){
+                cout<<"It is already a neighbour"<<endl;
+                break;
+            }
+        }
+        neighbours.push_back(newneigh);
+        cout<<"New neighbour added"<<endl;
+    }
+
+
+    private:
+    bool state;
+    int id;
+    vector<int> neighbours;
 };
 
 int main(){
     cout<<"Hello World"<<endl;
-    Node n1(1);
-    Node n2(2);
-    n2.connectNodes(n1, n2);
-    vector<Node> vec=n2.getNeighbours();
-    
-    n2.connectNodes(n1, n2);
-    n1.addNeighbour(n2);
+    return 0;
 }

@@ -5,16 +5,16 @@
 class Node
 {
     public:
-        Node();
+        Node(int identity);
         virtual ~Node();
-        int getState();
+        bool getState();
         void changeState();
         int getId();
-
+        void addNeighbour(int newneigh);
     
 
     private:
-        int state;
+        bool state;
         int id;
-        Node* neighbours;
+        vector<int> neighbours;
 };
