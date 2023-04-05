@@ -3,24 +3,29 @@
 #include <random>
 #include <fstream>
 #include <string>
+#include <sstream>
 #include "../include/ComplexNetwork.hpp"
-//#include "../include/Node.hpp"
+#include "../include/Node.hpp"
 using namespace std;
 //TODO: Change all call by values to call by reference
 //TODO: Optimise the search fucntionality in nodeList since they are sorted and can be referenced directly
 
-    ComplexNetwork::ComplexNetwork(int nodeC, int edgeC, int card){
-        this->nodeCount=nodeC;
-        this->edgeCount=edgeC;
-        this->cardinality=card;
-    }
+//to compile the code in the terminal: g++ ComplexNetwork.cpp -o ComplexNetwork
+//to run the code in the terminal: ./ComplexNetwork
 
-    int main(){
-        ComplexNetwork network(10, 10, 2);
-        network.loadData("../data/facebook_combined.txt");
-        cout<<"Done"<<endl;
-        return 0;
-    }
+
+ComplexNetwork::ComplexNetwork(int nodeC, int edgeC, int card){
+    this->nodeCount=nodeC;
+    this->edgeCount=edgeC;
+    this->cardinality=card;
+}
+
+int main(){
+    ComplexNetwork network(10, 10, 2);
+    network.loadData("../data/facebook_combined.txt");
+    cout<<"Done"<<endl;
+    return 0;
+}
 
 // void generateNetwork(){
 //     for(int i=0; i<nodeCount; i++){
@@ -40,14 +45,14 @@ using namespace std;
 
 // }
 
-// Node getNode(int identity){
-//     for(int i=0; i<nodeCount; i++){
-//         if(nodeList[i].getId()==identity)
-//             return nodeList[i];
-//     }
-//     cout<<"Node with id = "<<identity<<" not found";
-//     return NULL;
-// }
+Node getNode(int identity){
+    for(int i=0; i<nodeCount; i++){
+        if(nodeList[i].getId()==identity)
+            return nodeList[i];
+    }
+    cout<<"Node with id = "<<identity<<" not found";
+    return NULL;
+}
 
 void ComplexNetwork::loadData(std::string filename){
     fstream file;
@@ -55,13 +60,17 @@ void ComplexNetwork::loadData(std::string filename){
     string tp;
     while(getline(file, tp)){
         cout<< tp <<"\n";
+        std::istringstream is(tp);
+        int inputNode, outputNode;
+        is>>inputNode;
+        is>>outputNode;
+        
     }
     file.close();
 }
-
      
 int nodeCount, edgeCount, cardinality;
-// std::vector<Node> nodeList;
+std::vector<Node> nodeList;
 // void connectNodes(int id1, int id2){
 //     Node* n1;
 //     Node* n2;
