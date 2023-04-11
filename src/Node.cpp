@@ -23,14 +23,19 @@ int Node::getId(){
 }
 
 void Node::addNeighbour(int newneigh){
-    for(int i=0; i<this->neighbours.size(); i++){
-        if(neighbours[i]==newneigh){
-            cout<<"It is already a neighbour"<<endl;
-            break;
-        }
+    if(!isNeighbour(newneigh)){
+        neighbours.push_back(newneigh);
+        cout<<"New neighbour added"<<endl;
     }
-    neighbours.push_back(newneigh);
-    cout<<"New neighbour added"<<endl;
+    else
+        cout<<"Cannot add neighbour "<<newneigh<<"to the node "<<this->getId()<<endl;
+}
+
+bool Node::isNeighbour(int identity){
+    for(int i=0; i<this->neighbours.size(); i++)
+        if(neighbours[i]==identity)
+            return true;
+    return false;
 }
 
 bool state;

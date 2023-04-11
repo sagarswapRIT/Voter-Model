@@ -27,7 +27,8 @@ int main(){
     return 0;
 }
 
-// void generateNetwork(){
+//This function randomly creates a network
+// void generateRandomNetwork(){
 //     for(int i=0; i<nodeCount; i++){
 //         Node n(i);
 //         nodeList.push_back(n);
@@ -46,27 +47,44 @@ int main(){
 // }
 
 Node getNode(int identity){
-    for(int i=0; i<nodeCount; i++){
-        if(nodeList[i].getId()==identity)
-            return nodeList[i];
-    }
+    if(nodeCount>identity)
+        return nodeList[identity];
     cout<<"Node with id = "<<identity<<" not found";
     return NULL;
 }
 
+//This function creates a network where all the edges have been input from a text file
 void ComplexNetwork::loadData(std::string filename){
     fstream file;
     file.open(filename, ios::in);
     string tp;
+    int cc=0;
     while(getline(file, tp)){
         cout<< tp <<"\n";
         std::istringstream is(tp);
         int inputNode, outputNode;
         is>>inputNode;
         is>>outputNode;
-        
+        if(cc==0){
+            generateNetwork(inputNode, outputNode);
+            cc++;
+        }
+        else{
+            Node node=getNode(inputNode);
+            node.addNeighbour(outputNode);
+        }        
     }
     file.close();
+}
+
+void ComplexNetwork::generateNetwork(int nodeC, int edgeC){
+    this->nodeCount=nodeC;
+    this->edgeCount=edgeC;
+    for(int i=0; i<nodeC; i++){
+        Node newNode(i);
+        this->nodeList.push_back(newNode);
+    }
+
 }
      
 int nodeCount, edgeCount, cardinality;
