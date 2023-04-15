@@ -46,7 +46,7 @@ int main(){
 
 // }
 
-Node getNode(int identity){
+Node ComplexNetwork::getNode(int identity){
     if(nodeCount>identity)
         return nodeList[identity];
     cout<<"Node with id = "<<identity<<" not found";
