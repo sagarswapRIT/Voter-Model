@@ -5,12 +5,11 @@ class Node
 {
     public:
         Node(int identity);
-        virtual ~Node();
         bool getState();
         void changeState();
         int getId();
         void addNeighbour(int newneigh);
-    
+        bool isNeighbour(int id);
 
     private:
         bool state;
