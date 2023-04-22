@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <algorithm>
 using namespace std;
 
 /**
@@ -17,15 +18,16 @@ using namespace std;
  * This is the node class.
  * The member variables are:
  *      id - Int variable containing the id number of the node. The id can have values ranging from 0 to total Number of Nodes and is automatically assigned by the program while creating the node, stating from 0 and incrementing by 1 every time.
+ *      size - An integer variable which will hold the size of the neighbours' array so that it can be dynamically allocated later.
  *      state - A boolean variable which contains the state (0/1) of the node. Randomly assigned while creating the node and can change when interacting with a node which has a different state.
- *      neighbours - An integer vector containing the id numbers of all of its neighbours
+ *      neighbours - An integer array containing the id numbers of all of its neighbours
 */
 class Node{
     public:
 
-    int id;
+    int id, size;
     bool state;
-    vector<int> neighbours;
+    std::vector<int> neighbours;
 
     Node(int identity, bool status){
         this->id = identity;
@@ -63,20 +65,23 @@ class Node{
  * Input parameter: an integer variable containing the id of the neighbouring node to be removed.
 */
     void deleteNeighbour(int tar){
-        vector<int> tempvec;
-        for(int i=this->neighbours.size()-1; i>=0; i--){
-            int rem=this->neighbours.back();
-            this->neighbours.pop_back();
-            if(rem==tar)
-                break;
-            tempvec.push_back(rem);
-        }
-        for(int i=0; i<tempvec.size(); i++){
-            this->neighbours.push_back(tempvec.back());
-            tempvec.pop_back();
+        int ind=this->isNeighbour(tar);
+        if(ind>-1){
+            std::vector<int>::iterator newEnd = std::remove(neighbours.begin(), neighbours.end(),tar);
+            neighbours.erase(newEnd, neighbours.end());
         }
     }
 
+/**
+ * This function modifies the neighbours vector by changing one specific neighbour.
+ * Input Parameter: newNeighbour - An integer variable which contains the id of the new neighbour to be added.
+ *                  oldNeighbour - An integer variable which contains the id of the old neighbour to be removed.
+*/
+    void changeNeighbour(int newNeighbour, int oldNeighbour){
+        int ind=this->isNeighbour(oldNeighbour);
+        if(ind>-1)
+            neighbours[ind]=newNeighbour;
+    }
 /**
  * This function prints all neighbours of a node. Primarily used for debugging various parts of the program.
  * Input parameter: an integer variable denoting the max number of neighbours to be printed, incase a node has a lot of neighbours
@@ -201,7 +206,9 @@ class ComplexNetwork{
             for(int step=0; step<stepCount; step++){
                 interact(volatility);
             }
-            cout<<getSummary()<<endl;
+            //cout<<getSummary()<<endl;
+            int rand=std::rand();
+            cout<<rand<<endl;
         }
     }
 
@@ -267,18 +274,33 @@ class ComplexNetwork{
  *                      outputNode - pointer to the output node.
 */
     void rewire(Node* inputNode, Node* outputNode){
-        inputNode->deleteNeighbour(outputNode->getId());
+        double ind = 0.03;
+        int index = 0;
+        while(index!=-1){ //randomly generate an index number which is not a neighbour
+            ind=std::rand(); //generate a random number between 0 and nodeCount
+            cout<<ind<<" "<<nodeCount<<endl;
+            ind*=nodeCount;
+            cout<<ind<<endl;
+            cout<<RAND_MAX<<endl;
+            ind/=RAND_MAX;
+            cout<<ind<<endl;
+            index=ind;
+            index=inputNode->isNeighbour(index);
+        }
+        index=ind;
+
+        Node* newNeighbour = getNode(index);
+        newNeighbour->addNeighbour(inputNode->getId());
+        inputNode->changeNeighbour(newNeighbour->getId(), outputNode->getId());
         outputNode->deleteNeighbour(inputNode->getId());
+
+        
     }
 };
 
 int main(){
     cout<<"Hello World"<<endl;
-    ComplexNetwork* network=new ComplexNetwork("../data/trial.txt");
+    ComplexNetwork* network=new ComplexNetwork("../data/facebook.txt");
     network->loadData();
-    network->printAllEdges(100);
-    cout<<endl<<endl;
-    network->rewire(network->getNode(0), network->getNode(2));
-    network->printAllEdges(100);
-    //network->beginSimulation(1000, 10, 0.001);
+    network->beginSimulation(1000, 10, 0.01);
 }
