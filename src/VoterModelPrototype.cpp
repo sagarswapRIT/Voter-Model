@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <random>
 using namespace std;
 
 /**
@@ -238,18 +239,18 @@ class ComplexNetwork{
 */
     void interact(int volatility){
         for(int i=0; i<nodeCount; i++){
-            double seed=std::rand()/RAND_MAX;
+            double seed=getRandomNumber(1009);
             //double seed=0.0;
-            if(seed<volatility*10){
+            if(seed<500){
                 Node* node=nodeList[i];
                 for(int j=0; j<node->neighbours.size(); j++){
                     Node* tarNode=nodeList[node->neighbours[j]];
-                    seed=std::rand()/RAND_MAX;
+                    seed=getRandomNumber(1009);
                     //seed=0;
-                    if(node->getState()!=tarNode->getState() && seed<volatility*5){
-                        seed=std::rand()/RAND_MAX;
+                    if(node->getState()!=tarNode->getState() && seed<500){
+                        seed=getRandomNumber(1009);
                         //seed=1;
-                        if(seed>0.5)
+                        if(seed>504)
                             convince(node, tarNode);
                         else
                             rewire(node, tarNode);
@@ -274,27 +275,31 @@ class ComplexNetwork{
  *                      outputNode - pointer to the output node.
 */
     void rewire(Node* inputNode, Node* outputNode){
-        double ind = 0.03;
         int index = 0;
         while(index!=-1){ //randomly generate an index number which is not a neighbour
-            ind=std::rand(); //generate a random number between 0 and nodeCount
-            cout<<ind<<" "<<nodeCount<<endl;
-            ind*=nodeCount;
-            cout<<ind<<endl;
-            cout<<RAND_MAX<<endl;
-            ind/=RAND_MAX;
-            cout<<ind<<endl;
-            index=ind;
+            index=getRandomNumber(nodeCount); //generate a random number between 0 and nodeCount
+            cout<<index<<" "<<nodeCount<<endl;
             index=inputNode->isNeighbour(index);
         }
-        index=ind;
-
+        
         Node* newNeighbour = getNode(index);
         newNeighbour->addNeighbour(inputNode->getId());
         inputNode->changeNeighbour(newNeighbour->getId(), outputNode->getId());
         outputNode->deleteNeighbour(inputNode->getId());
 
         
+    }
+
+/**
+ * This function generates a random number between 0 and limit, and returns it to the caller
+ * Input Parameters : limit - Integer variable which will contain the upper limit of random number generation.
+ * Return Value : Integer variable of a random number.
+*/
+    int getRandomNumber(int limit){
+        std::random_device dev;
+        std::mt19937 rng(dev());
+        std::uniform_int_distribution<std::mt19937::result_type> dist6(0, limit); // distribution in range [1, 6]
+        return dist6(rng);
     }
 };
 
