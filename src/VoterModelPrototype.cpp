@@ -197,23 +197,6 @@ class ComplexNetwork{
     }
 
 /**
- * This function starts the simulation by calling the interact() as well as regularly printing the results after every stepCount loop.
- * Input Parameters :   epochLimit - An integer variable which defines the duration of execution of the simulation.
- *                      stepCount - An integer variable which defines the number of steps in each epoch. The total duration of the simulation = epochLimit*stepCount.
- *                      volatility - The frequency with which nodes ineract with each other.
-*/
-    void beginSimulation(int epochLimit, int stepCount, int volatility){
-        for(int epoch=0; epoch<epochLimit; epoch++){
-            for(int step=0; step<stepCount; step++){
-                interact(volatility);
-            }
-            //cout<<getSummary()<<endl;
-            int rand=std::rand();
-            cout<<rand<<endl;
-        }
-    }
-
-/**
  * This function initialises the values of nodeCount, edgeCount, stat0 and stat1, creates every Node and assigns a random state to each one of them.
  * Input Parameters :   nodeC - An integer variable containing the number of nodes in the network.
  *                      edgeC - An integer variable containing the number of edges in the network.
@@ -222,13 +205,29 @@ class ComplexNetwork{
         this->nodeCount=nodeC;
         this->edgeCount=edgeC;
         for(int i=0; i<nodeC; i++){
-            int randState=std::rand();
+            int randState=getRandomNumber(100);
             if(randState%2==0)
                 stat0++;
             else
                 stat1++;
             Node* newNode=new Node(i, randState%2);
             this->nodeList.push_back(newNode);
+        }
+    }
+
+/**
+ * This function starts the simulation by calling the interact() as well as regularly printing the results after every stepCount loop.
+ * Input Parameters :   epochLimit - An integer variable which defines the duration of execution of the simulation.
+ *                      stepCount - An integer variable which defines the number of steps in each epoch. The total duration of the simulation = epochLimit*stepCount.
+ *                      volatility - The frequency with which nodes ineract with each other.
+*/
+    void beginSimulation(int epochLimit, int stepCount, int volatility){
+        cout<<getSummary()<<endl;
+        for(int epoch=0; epoch<epochLimit; epoch++){
+            for(int step=0; step<stepCount; step++){
+                interact(volatility);
+            }
+            cout<<getSummary()<<endl;
         }
     }
 
@@ -241,16 +240,16 @@ class ComplexNetwork{
         for(int i=0; i<nodeCount; i++){
             double seed=getRandomNumber(1009);
             //double seed=0.0;
-            if(seed<500){
+            if(seed<50){
                 Node* node=nodeList[i];
                 for(int j=0; j<node->neighbours.size(); j++){
                     Node* tarNode=nodeList[node->neighbours[j]];
                     seed=getRandomNumber(1009);
                     //seed=0;
-                    if(node->getState()!=tarNode->getState() && seed<500){
+                    if(node->getState()!=tarNode->getState() && seed<50){
                         seed=getRandomNumber(1009);
                         //seed=1;
-                        if(seed>504)
+                        if(seed<504)
                             convince(node, tarNode);
                         else
                             rewire(node, tarNode);
@@ -267,6 +266,14 @@ class ComplexNetwork{
 */
     void convince(Node* inputNode, Node* outputNode){
         outputNode->changeState();
+        if(outputNode->getState()){
+            stat1++;
+            stat0--;
+        }
+        else{
+            stat0++;
+            stat1--;
+        }
     }
 
 /**
@@ -275,19 +282,19 @@ class ComplexNetwork{
  *                      outputNode - pointer to the output node.
 */
     void rewire(Node* inputNode, Node* outputNode){
-        int index = 0;
-        while(index!=-1){ //randomly generate an index number which is not a neighbour
-            index=getRandomNumber(nodeCount); //generate a random number between 0 and nodeCount
-            cout<<index<<" "<<nodeCount<<endl;
-            index=inputNode->isNeighbour(index);
-        }
-        
-        Node* newNeighbour = getNode(index);
+        Node* newNeighbour = getNode(getRandomNewNeighbour(inputNode));
         newNeighbour->addNeighbour(inputNode->getId());
         inputNode->changeNeighbour(newNeighbour->getId(), outputNode->getId());
-        outputNode->deleteNeighbour(inputNode->getId());
+        outputNode->deleteNeighbour(inputNode->getId());        
+    }
 
-        
+    int getRandomNewNeighbour(Node* node){
+        int newIndex=3, indx=0;
+        do{
+            newIndex=getRandomNumber(nodeCount-1);
+            indx=node->isNeighbour(newIndex);
+        }while(indx!=-1);
+        return newIndex;
     }
 
 /**
@@ -307,5 +314,6 @@ int main(){
     cout<<"Hello World"<<endl;
     ComplexNetwork* network=new ComplexNetwork("../data/facebook.txt");
     network->loadData();
+    cout<<network->getSummary()<<endl;
     network->beginSimulation(1000, 10, 0.01);
 }
