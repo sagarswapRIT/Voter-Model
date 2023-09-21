@@ -320,6 +320,6 @@ int main(){
     ComplexNetwork* network=new ComplexNetwork("../data/facebook.txt");
     network->loadData();
     cout<<network->getSummary()<<endl;
-    network->beginSimulation(100, 10, 0.01);
+    network->beginSimulation(1000, 10, 0.01);
     //network->printAllEdges(15);
 }
