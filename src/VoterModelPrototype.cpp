@@ -223,12 +223,16 @@ class ComplexNetwork{
 */
     void beginSimulation(int epochLimit, int stepCount, int volatility){
         cout<<getSummary()<<endl;
+        ofstream outputFile;
+        outputFile.open("../data/output.txt");
         for(int epoch=0; epoch<epochLimit; epoch++){
             for(int step=0; step<stepCount; step++){
                 interact(volatility);
             }
             cout<<getSummary()<<endl;
+            outputFile << getSummary() <<endl;
         }
+        outputFile.close();
     }
 
 /**
@@ -315,5 +319,6 @@ int main(){
     ComplexNetwork* network=new ComplexNetwork("../data/facebook.txt");
     network->loadData();
     cout<<network->getSummary()<<endl;
-    network->beginSimulation(1000, 10, 0.01);
+    network->beginSimulation(100, 10, 0.01);
+    //network->printAllEdges(15);
 }
