@@ -225,6 +225,7 @@ class ComplexNetwork{
         cout<<getSummary()<<endl;
         ofstream outputFile;
         outputFile.open("../data/output.txt");
+        outputFile<<"Pop1 Pop2"<<endl;
         for(int epoch=0; epoch<epochLimit; epoch++){
             for(int step=0; step<stepCount; step++){
                 interact(volatility);
