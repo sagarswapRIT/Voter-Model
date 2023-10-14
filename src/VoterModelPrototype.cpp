@@ -33,6 +33,7 @@ class Node{
     Node(int identity, bool status){
         this->id = identity;
         this->state = status;
+        this->size=0;
     }
 
     bool getState(){
@@ -50,60 +51,84 @@ class Node{
         return this->id;
     }
 
+    int getNeighbourCount(){
+        return size;
+    }
+
 /**
  * This function adds a different node's id to the node's list of neighbours. 
  * Input parameter: an integer variable containing the id of the neighbouring node to be added.
+ * Return Type: 0 if sucess, -1 if fail
 */
-    void addNeighbour(int newneigh){
-        if(isNeighbour(newneigh)==-1) 
-            neighbours.push_back(newneigh);
-        else
-            cout<<"Cannot add neighbour "<<newneigh<<"to the node "<<this->getId()<<endl;
+    bool addNeighbour(int newneigh){
+        if(isNeighbour(newneigh)==-1) {
+            this->neighbours.push_back(newneigh);
+            size++;
+            return true;
+        }
+        else{
+            cout<<this->getId()<<" and "<<newneigh<<" are already neighbours"<<endl;
+            return false;
+        }
     }
 
 /**
  * This function deletes an existing neighbour's id from the vector neighbours
  * Input parameter: an integer variable containing the id of the neighbouring node to be removed.
 */
-    void deleteNeighbour(int tar){
+    bool deleteNeighbour(int tar){
         int ind=this->isNeighbour(tar);
-        if(ind>-1){
-            std::vector<int>::iterator newEnd = std::remove(neighbours.begin(), neighbours.end(),tar);
-            neighbours.erase(newEnd, neighbours.end());
+        if(ind>-1 && neighbours[ind]!=tar){
+            cout<<"While deleting "<<tar<<" from "<<this->getId()<<" we had indexing issue"<<endl;
+            return false;
         }
+        if(ind>-1){
+            neighbours.erase(std::remove(neighbours.begin(), neighbours.end(), tar), neighbours.end());
+            size--;
+            return true;
+        }
+        else
+            cout<<"Deletion Failed on node "<<this->getId()<<" while removing neighbour "<<tar<<" and ind= "<<ind<<endl;
+        return false;
     }
 
-/**
- * This function modifies the neighbours vector by changing one specific neighbour.
- * Input Parameter: newNeighbour - An integer variable which contains the id of the new neighbour to be added.
- *                  oldNeighbour - An integer variable which contains the id of the old neighbour to be removed.
-*/
-    void changeNeighbour(int newNeighbour, int oldNeighbour){
-        int ind=this->isNeighbour(oldNeighbour);
-        if(ind>-1)
-            neighbours[ind]=newNeighbour;
-    }
 /**
  * This function prints all neighbours of a node. Primarily used for debugging various parts of the program.
  * Input parameter: an integer variable denoting the max number of neighbours to be printed, incase a node has a lot of neighbours
 */
     void printAllNeighbours(int lim){
-        for(int i=0; i<this->neighbours.size() && i<lim; i++)
+        for(int i=0; i<this->size && i<lim; i++)
+            cout<<this->neighbours[i]<<", ";
+        cout<<endl;
+    }
+    void printAllNeighbours(){
+        for(int i=0; i<this->size; i++)
             cout<<this->neighbours[i]<<", ";
         cout<<endl;
     }
 
 /**
  * This function iterates through the neighbours vector to check if a given node id is present in the list.
- * Input parameter: An integer variable containing the id of the node we want to check
- * Return values: Returns the location of the id being stored in the vector if it is present, -1 if the node is not a neighbour
+ * Input parameter: An integer variable containing the id of the node we want to check along with a char variable 
+ * Return values: Returns the location of the id being stored in the vector if it is present if option='i'; 
+ *                Returns identity if option=Returns -1 if the node is not a neighbour
 */
     //returns -1 if identity is not a neighbour, else returns index number 
     int isNeighbour(int identity){
-        for(int i=0; i<this->neighbours.size(); i++)
+        for(int i=0; i<this->size; i++)
             if(neighbours[i]==identity)
                 return i;
         return -1;
+    }
+
+/**
+ * This function is meant for debugging purposes. Returns True if neighbour and false if not.
+*/
+    bool neighbourCheck(int identity){
+        for(int i=0; i<this->size; i++)
+            if(neighbours[i]==identity)
+                return true;
+        return false;
     }
 };
 
@@ -126,6 +151,7 @@ class ComplexNetwork{
     std::string filename;
 
     ComplexNetwork(std::string fname){
+        cout<<"Constructor reached"<<endl;
         this->filename=fname;
         stat0=0;
         stat1=0;
@@ -138,6 +164,7 @@ class ComplexNetwork{
  * This function then connects the entire network by defining the edges between the nodes.
 */
     void loadData(){
+        cout<<"Data Load Start"<<endl;
         fstream file;
         file.open(filename, ios::in);
         string tp;
@@ -153,6 +180,8 @@ class ComplexNetwork{
                 cc++;
             }
             else{
+                if(inputNode==outputNode)
+                    continue; //prevents edges into self
                 Node* node1=getNode(inputNode);
                 node1->addNeighbour(outputNode);
                 Node* node2=getNode(outputNode);
@@ -171,7 +200,7 @@ class ComplexNetwork{
     Node* getNode(int identity){
         if(nodeCount>identity)
             return nodeList[identity];
-        cout<<"Node with id = "<<identity<<" not found";
+        //cout<<"Node with id = "<<identity<<" not found"<<endl;
         return NULL;
     }
 
@@ -192,7 +221,7 @@ class ComplexNetwork{
 */
     std::string getSummary(){
         std::ostringstream oss;
-        oss<<stat0<<" "<<stat1;
+        oss<<stat0<<" "<<(stat1/(stat1*1.0+stat0*1.0))<<" "<<edgeCount;
         return oss.str();
     }
 
@@ -221,14 +250,18 @@ class ComplexNetwork{
  *                      stepCount - An integer variable which defines the number of steps in each epoch. The total duration of the simulation = epochLimit*stepCount.
  *                      volatility - The frequency with which nodes ineract with each other.
 */
-    void beginSimulation(int epochLimit, int stepCount, int volatility){
+    void beginSimulation(int epochLimit, int stepCount, double volatility){
         cout<<getSummary()<<endl;
         ofstream outputFile;
-        outputFile.open("../data/output.txt");
+        outputFile.open("../data/output001_2.txt");
         outputFile<<"Pop1 Pop2"<<endl;
         for(int epoch=0; epoch<epochLimit; epoch++){
             for(int step=0; step<stepCount; step++){
                 interact(volatility);
+            }
+            if(epoch%10==0){
+                cout<<"Epoch No. "<<epoch<<endl;
+                checkInconsitentNeighbours();
             }
             cout<<getSummary()<<endl;
             outputFile << getSummary() <<endl;
@@ -241,24 +274,24 @@ class ComplexNetwork{
  * It iterates through every edge and uses random number generation to decide on its interaction
  * Input Parameter - An integer variable between 0 and 0.1 which controls how often an interaction occurs. 
 */
-    void interact(int volatility){
+    void interact(double volatility){
         for(int i=0; i<nodeCount; i++){
+            if(nodeList[i]->getNeighbourCount()==0)
+                continue;
             double seed=getRandomNumber(1009);
             //double seed=0.0;
-            if(seed<50){
+            double seed2=volatility*1009.0;
+            if(seed<seed2){
                 Node* node=nodeList[i];
-                for(int j=0; j<node->neighbours.size(); j++){
-                    Node* tarNode=nodeList[node->neighbours[j]];
+                //cout<<"*";
+                Node* tarNode=getNeighbour(node);
+                if(node->getState()!=tarNode->getState()){
                     seed=getRandomNumber(1009);
-                    //seed=0;
-                    if(node->getState()!=tarNode->getState() && seed<50){
-                        seed=getRandomNumber(1009);
-                        //seed=1;
-                        if(seed<504)
-                            convince(node, tarNode);
-                        else
-                            rewire(node, tarNode);
-                    }
+                    //seed=1;
+                    if(seed<=504)
+                        convince(node, tarNode);
+                    else
+                        rewire(node, tarNode);
                 }
             }
         }
@@ -286,11 +319,33 @@ class ComplexNetwork{
  * Input Parameters :   inputNode - pointer to the input node.
  *                      outputNode - pointer to the output node.
 */
-    void rewire(Node* inputNode, Node* outputNode){
-        Node* newNeighbour = getNode(getRandomNewNeighbour(inputNode));
-        newNeighbour->addNeighbour(inputNode->getId());
-        inputNode->changeNeighbour(newNeighbour->getId(), outputNode->getId());
-        outputNode->deleteNeighbour(inputNode->getId());        
+    void rewire(Node* adderNode, Node* deleterNode){
+        bool chk=true;;
+        Node* newNeighbour= getNode(getRandomNewNeighbour(adderNode));
+        //cout<<"Adder = "<<adderNode->getId()<<endl;
+        //cout<<"New = "<<newNeighbour->getId()<<endl;
+        //cout<<"Deleter = "<<deleterNode->getId()<<endl;
+        //cout<<"Adder neighbours = ";
+        //adderNode->printAllNeighbours();
+        //cout<<"Deleter Neighbours = ";
+        //deleterNode->printAllNeighbours();
+        chk=adderNode->addNeighbour(newNeighbour->getId());
+        // if(!chk)
+        //     cout<<"3";
+        chk=newNeighbour->addNeighbour(adderNode->getId());
+        // if(!chk)
+        //     cout<<"4";
+        chk=adderNode->deleteNeighbour(deleterNode->getId());
+        // if(!chk)
+        //     cout<<"1";
+        chk=deleterNode->deleteNeighbour(adderNode->getId()); 
+        // if(!chk)
+        //     cout<<"2";      
+        if(!chk){
+            cout<<"Error in Rewiring"<<endl;
+            exit(0);
+        }
+
     }
 
     int getRandomNewNeighbour(Node* node){
@@ -298,8 +353,38 @@ class ComplexNetwork{
         do{
             newIndex=getRandomNumber(nodeCount-1);
             indx=node->isNeighbour(newIndex);
+            if(newIndex==node->getId()) //prevents function from randomly assigning the same to to itself. Our graph doesn't allow edges to itself.
+                indx=1;
         }while(indx!=-1);
+        //cout<<"Is new number "<<newIndex<<" Neighbour of "<<node->getId()<<"?"<<node->isNeighbour(newIndex)<<"  size = "<<node->getNeighbourCount()<<endl;
         return newIndex;
+    }
+
+    Node* getNeighbour(Node* node){
+        //cout<<"Node Size = "<<node->getNeighbourCount()<<" for node = "<<node->getId()<<endl;
+        //node->printAllNeighbours();
+        int seed=getRandomNumber(node->getNeighbourCount()-1);
+        //cout<<"Random Index = "<<seed<<" vs Size = "<<node->size<<endl;
+        Node* n=getNode(node->neighbours[seed]);
+        //cout<<"Random Neighbour = "<<n->getId()<<endl;
+        
+        return n;
+    }
+
+/**
+ * Iterates through all the nodes and gives the number of discordant edges
+ * Retrun : Integer containing the count of discordant edges
+*/
+    int getDiscordantEdgeCount(){
+        int count=0;
+        for(Node* node: nodeList){
+            for(int id:node->neighbours){
+                Node* neighbour=this->getNode(id);
+                if(node->getState()!=neighbour->getState())
+                    count++;
+            }
+        }
+        return count;
     }
 
 /**
@@ -313,13 +398,46 @@ class ComplexNetwork{
         std::uniform_int_distribution<std::mt19937::result_type> dist6(0, limit); 
         return dist6(rng);
     }
+
+    void checkInconsitentNeighbours(){
+        int difference=0;
+        for(Node* node: nodeList){
+            for(int neigh: node->neighbours){
+                Node* neighbour=this->getNode(neigh);
+                if(node->neighbourCheck(neighbour->getId()) != neighbour->neighbourCheck(node->getId()))
+                    difference++;
+            }
+        }
+        cout<<"Difference = "<<difference<<endl;
+    }
+
+    void debugger(){
+        Node* node1=this->getNode(5);
+        Node* node2=this->getNode(node1->neighbours[1]);
+        Node* node3=this->getNode(65);
+        node1->printAllNeighbours();
+        cout<<node1->isNeighbour(74);
+        cout<<node1->isNeighbour(2);
+        // node2->printAllNeighbours();
+        // node3->printAllNeighbours();
+        // node1->deleteNeighbour(node2->getId());
+        // node2->deleteNeighbour(node1->getId());
+        // node1->addNeighbour(node3->getId());
+        // node3->addNeighbour(node1->getId());
+        // node1->printAllNeighbours();
+        // node2->printAllNeighbours();
+        // node3->printAllNeighbours();
+    }
 };
 
 int main(){
-    cout<<"Hello World"<<endl;
     ComplexNetwork* network=new ComplexNetwork("../data/facebook.txt");
     network->loadData();
-    cout<<network->getSummary()<<endl;
-    network->beginSimulation(1000, 10, 0.01);
+    //cout<<network->getSummary()<<endl;
+    //network->checkInconsitentNeighbours();
+    //network->debugger();
+    network->beginSimulation(10000, 20, 0.01);
     //network->printAllEdges(15);
 }
+
+//TODO: Plot number of pop vs discordant edges.
