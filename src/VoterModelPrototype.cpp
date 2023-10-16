@@ -145,16 +145,23 @@ class Node{
 */
 class ComplexNetwork{
     public:
-
+    //node status as false is related to stat0 while true is related to stat1
     int nodeCount, edgeCount, stat0, stat1;
+    int epochLimit, stepCount;
+    double volatility;
     std::vector<Node*> nodeList;
-    std::string filename;
+    std::string inputFileName, outputFileName;
 
-    ComplexNetwork(std::string fname){
+    ComplexNetwork(std::string infname, int epoch, int step, double vol){
         cout<<"Constructor reached"<<endl;
-        this->filename=fname;
+        this->inputFileName="../data/input/"+infname+".txt";
+        int n=vol*1000.0;
+        this->outputFileName="../data/output/"+infname+"_"+std::to_string(n)+"_"+std::to_string(getRandomNumber(1000))+".txt";
         stat0=0;
         stat1=0;
+        epochLimit=epoch;
+        stepCount=step;
+        volatility=vol;
     }
 
 /**
@@ -166,7 +173,7 @@ class ComplexNetwork{
     void loadData(){
         cout<<"Data Load Start"<<endl;
         fstream file;
-        file.open(filename, ios::in);
+        file.open(this->inputFileName, ios::in);
         string tp;
         int cc=0;
         while(getline(file, tp)){
@@ -200,7 +207,7 @@ class ComplexNetwork{
     Node* getNode(int identity){
         if(nodeCount>identity)
             return nodeList[identity];
-        //cout<<"Node with id = "<<identity<<" not found"<<endl;
+        cout<<"Node with id = "<<identity<<" not found"<<endl;
         return NULL;
     }
 
@@ -217,11 +224,14 @@ class ComplexNetwork{
     }
 
 /**
- * This function returns a string containing the number of nodes in each state at that particular time in the network.
+ * This function returns a string containing the number of nodes in each state at that particular time in the network, its opinion density, number of discordant edges and epoch number
 */
-    std::string getSummary(){
+    std::string getSummary(int epoch){
         std::ostringstream oss;
-        oss<<stat0<<" "<<(stat1/(stat1*1.0+stat0*1.0))<<" "<<edgeCount;
+        long discEdge=this->getDiscordantEdgeCount();
+        if(discEdge<=10 || discEdge<0.00025*edgeCount)
+            exit(0);
+        oss<<(epoch+1)<<" "<<stat0<<" "<<(stat0/(stat1*1.0+stat0*1.0))<<" "<<discEdge;
         return oss.str();
     }
 
@@ -242,6 +252,7 @@ class ComplexNetwork{
             Node* newNode=new Node(i, randState%2);
             this->nodeList.push_back(newNode);
         }
+        cout<<"Network Generated"<<endl;
     }
 
 /**
@@ -250,21 +261,20 @@ class ComplexNetwork{
  *                      stepCount - An integer variable which defines the number of steps in each epoch. The total duration of the simulation = epochLimit*stepCount.
  *                      volatility - The frequency with which nodes ineract with each other.
 */
-    void beginSimulation(int epochLimit, int stepCount, double volatility){
-        cout<<getSummary()<<endl;
+    void beginSimulation(){
+        cout<<getSummary(-1)<<endl;
         ofstream outputFile;
-        outputFile.open("../data/output001_2.txt");
-        outputFile<<"Pop1 Pop2"<<endl;
-        for(int epoch=0; epoch<epochLimit; epoch++){
-            for(int step=0; step<stepCount; step++){
-                interact(volatility);
-            }
+        outputFile.open(this->outputFileName);
+        outputFile<<"Epoch Pop Frac DiscEdge"<<endl;
+        for(int epoch=0; epoch<this->epochLimit; epoch++){
+            for(int step=0; step<this->stepCount; step++)
+                interact();
             if(epoch%10==0){
                 cout<<"Epoch No. "<<epoch<<endl;
                 checkInconsitentNeighbours();
             }
-            cout<<getSummary()<<endl;
-            outputFile << getSummary() <<endl;
+            cout<<getSummary(epoch)<<endl;
+            outputFile << getSummary(epoch) <<endl;
         }
         outputFile.close();
     }
@@ -274,25 +284,23 @@ class ComplexNetwork{
  * It iterates through every edge and uses random number generation to decide on its interaction
  * Input Parameter - An integer variable between 0 and 0.1 which controls how often an interaction occurs. 
 */
-    void interact(double volatility){
-        for(int i=0; i<nodeCount; i++){
-            if(nodeList[i]->getNeighbourCount()==0)
+    void interact(){
+        for(Node* node: nodeList){
+            double seedOpt=getRandomNumber(10000);
+            Node* tarNode;
+            if(seedOpt>6000) //for convincing, we always deal with discordant neighbours
+                tarNode=getDiscordantNeighbour(node);
+            else //for rewiring, can be any neighbour
+                tarNode=getNeighbour(node);
+            if(tarNode==nullptr)
                 continue;
             double seed=getRandomNumber(1009);
-            //double seed=0.0;
-            double seed2=volatility*1009.0;
+            double seed2=this->volatility*1009.0;
             if(seed<seed2){
-                Node* node=nodeList[i];
-                //cout<<"*";
-                Node* tarNode=getNeighbour(node);
-                if(node->getState()!=tarNode->getState()){
-                    seed=getRandomNumber(1009);
-                    //seed=1;
-                    if(seed<=504)
-                        convince(node, tarNode);
-                    else
-                        rewire(node, tarNode);
-                }
+                if(seedOpt>6000)
+                    convince(node, tarNode);
+                else
+                    rewire(node, tarNode, false);
             }
         }
     }
@@ -303,6 +311,10 @@ class ComplexNetwork{
  *                      outputNode - pointer to the output node.
 */
     void convince(Node* inputNode, Node* outputNode){
+        if(inputNode->getState()==outputNode->getState()){
+            //cout<<"Dingus"<<endl;
+            return; //no convincing needed since they have same opinion
+        }
         outputNode->changeState();
         if(outputNode->getState()){
             stat1++;
@@ -318,29 +330,22 @@ class ComplexNetwork{
  * This function is responsible for the deletion of an old edge and the creation of a new edge which happened as a result of interation between 2 nodes of 2 different states.
  * Input Parameters :   inputNode - pointer to the input node.
  *                      outputNode - pointer to the output node.
+ *                      onlyFriends - if false -> rewire to anyone; if true-> rewire only to similar nodes
 */
-    void rewire(Node* adderNode, Node* deleterNode){
-        bool chk=true;;
-        Node* newNeighbour= getNode(getRandomNewNeighbour(adderNode));
-        //cout<<"Adder = "<<adderNode->getId()<<endl;
-        //cout<<"New = "<<newNeighbour->getId()<<endl;
-        //cout<<"Deleter = "<<deleterNode->getId()<<endl;
-        //cout<<"Adder neighbours = ";
-        //adderNode->printAllNeighbours();
-        //cout<<"Deleter Neighbours = ";
-        //deleterNode->printAllNeighbours();
-        chk=adderNode->addNeighbour(newNeighbour->getId());
-        // if(!chk)
-        //     cout<<"3";
-        chk=newNeighbour->addNeighbour(adderNode->getId());
-        // if(!chk)
-        //     cout<<"4";
-        chk=adderNode->deleteNeighbour(deleterNode->getId());
-        // if(!chk)
-        //     cout<<"1";
-        chk=deleterNode->deleteNeighbour(adderNode->getId()); 
-        // if(!chk)
-        //     cout<<"2";      
+    void rewire(Node* adderNode, Node* deleterNode, bool onlyFriends){
+        bool chk=true;
+        Node* newNeighbour;
+        if(!onlyFriends)
+            newNeighbour= getNode(getRandomNewNeighbour(adderNode));
+        else{
+            do{ //force to rewire with same state
+                newNeighbour=getNode(getRandomNewNeighbour(adderNode));
+            }while(newNeighbour->getState()!=adderNode->getState());
+        }
+        chk=chk && adderNode->addNeighbour(newNeighbour->getId());
+        chk=chk && newNeighbour->addNeighbour(adderNode->getId());
+        chk=chk && adderNode->deleteNeighbour(deleterNode->getId());
+        chk=chk && deleterNode->deleteNeighbour(adderNode->getId());   
         if(!chk){
             cout<<"Error in Rewiring"<<endl;
             exit(0);
@@ -353,30 +358,45 @@ class ComplexNetwork{
         do{
             newIndex=getRandomNumber(nodeCount-1);
             indx=node->isNeighbour(newIndex);
-            if(newIndex==node->getId()) //prevents function from randomly assigning the same to to itself. Our graph doesn't allow edges to itself.
+            if(newIndex==node->getId()) //prevents function from randomly assigning a node's neighbour as itself
                 indx=1;
         }while(indx!=-1);
-        //cout<<"Is new number "<<newIndex<<" Neighbour of "<<node->getId()<<"?"<<node->isNeighbour(newIndex)<<"  size = "<<node->getNeighbourCount()<<endl;
         return newIndex;
     }
 
+/**
+ * This function returns a random neighbour of the input node.
+ * Input Parameter: Node* reference to a node whose neighbour we want.
+ * Return Value:    Node* reference to random neighbour; null-pointer if node doesn't have any edge.
+*/
     Node* getNeighbour(Node* node){
-        //cout<<"Node Size = "<<node->getNeighbourCount()<<" for node = "<<node->getId()<<endl;
-        //node->printAllNeighbours();
+        if(node->getNeighbourCount()==0)
+            return nullptr;
         int seed=getRandomNumber(node->getNeighbourCount()-1);
-        //cout<<"Random Index = "<<seed<<" vs Size = "<<node->size<<endl;
-        Node* n=getNode(node->neighbours[seed]);
-        //cout<<"Random Neighbour = "<<n->getId()<<endl;
-        
-        return n;
+        return getNode(node->neighbours[seed]);        
+    }
+
+/**
+ * This function returns a neighbour with the discordant edge. Incase there are no neighbours or no neighbours with a discordant edge, returns a null pointer.
+ * Input Parameter: Node* containing the node reference whose neighbour we want to find.
+ * Return Value:    Node* reference to discordant neighbour or a null-pointer.
+*/
+    Node* getDiscordantNeighbour(Node* node){
+        if(node->getNeighbourCount()==0)
+            return nullptr;
+        for(int neigh: node->neighbours){
+            if(this->getNode(neigh)->getState()!=node->getState())
+                return this->getNode(neigh);
+        }
+        return nullptr;
     }
 
 /**
  * Iterates through all the nodes and gives the number of discordant edges
- * Retrun : Integer containing the count of discordant edges
+ * Retrun : Long Integer containing the count of discordant edges
 */
-    int getDiscordantEdgeCount(){
-        int count=0;
+    long getDiscordantEdgeCount(){
+        long count=0;
         for(Node* node: nodeList){
             for(int id:node->neighbours){
                 Node* neighbour=this->getNode(id);
@@ -384,7 +404,7 @@ class ComplexNetwork{
                     count++;
             }
         }
-        return count;
+        return count/2;
     }
 
 /**
@@ -410,34 +430,12 @@ class ComplexNetwork{
         }
         cout<<"Difference = "<<difference<<endl;
     }
-
-    void debugger(){
-        Node* node1=this->getNode(5);
-        Node* node2=this->getNode(node1->neighbours[1]);
-        Node* node3=this->getNode(65);
-        node1->printAllNeighbours();
-        cout<<node1->isNeighbour(74);
-        cout<<node1->isNeighbour(2);
-        // node2->printAllNeighbours();
-        // node3->printAllNeighbours();
-        // node1->deleteNeighbour(node2->getId());
-        // node2->deleteNeighbour(node1->getId());
-        // node1->addNeighbour(node3->getId());
-        // node3->addNeighbour(node1->getId());
-        // node1->printAllNeighbours();
-        // node2->printAllNeighbours();
-        // node3->printAllNeighbours();
-    }
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("../data/facebook.txt");
+    ComplexNetwork* network=new ComplexNetwork("facebook_artist_large", 100000, 5, 0.001);
     network->loadData();
-    //cout<<network->getSummary()<<endl;
-    //network->checkInconsitentNeighbours();
-    //network->debugger();
-    network->beginSimulation(10000, 20, 0.01);
-    //network->printAllEdges(15);
+    network->beginSimulation();
 }
 
 //TODO: Plot number of pop vs discordant edges.
