@@ -245,11 +245,12 @@ class ComplexNetwork{
         this->edgeCount=edgeC;
         for(int i=0; i<nodeC; i++){
             int randState=getRandomNumber(100);
-            if(randState%2==0)
+            int frac=2;
+            if(randState%frac==0)
                 stat0++;
             else
                 stat1++;
-            Node* newNode=new Node(i, randState%2);
+            Node* newNode=new Node(i, randState%frac);
             this->nodeList.push_back(newNode);
         }
         cout<<"Network Generated"<<endl;
@@ -300,7 +301,7 @@ class ComplexNetwork{
                 if(seedOpt>6000)
                     convince(node, tarNode);
                 else
-                    rewire(node, tarNode, false);
+                    rewire(node, tarNode, true);
             }
         }
     }
@@ -335,12 +336,13 @@ class ComplexNetwork{
     void rewire(Node* adderNode, Node* deleterNode, bool onlyFriends){
         bool chk=true;
         Node* newNeighbour;
-        if(!onlyFriends)
-            newNeighbour= getNode(getRandomNewNeighbour(adderNode));
-        else{
+        if(onlyFriends){
             do{ //force to rewire with same state
                 newNeighbour=getNode(getRandomNewNeighbour(adderNode));
-            }while(newNeighbour->getState()!=adderNode->getState());
+            }while(newNeighbour->getState()!=adderNode->getState());  
+        }
+        else{
+            newNeighbour= getNode(getRandomNewNeighbour(adderNode));
         }
         chk=chk && adderNode->addNeighbour(newNeighbour->getId());
         chk=chk && newNeighbour->addNeighbour(adderNode->getId());
@@ -433,7 +435,7 @@ class ComplexNetwork{
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("facebook_artist_large", 100000, 5, 0.001);
+    ComplexNetwork* network=new ComplexNetwork("facebook_medium", 100000, 1, 0.1);
     network->loadData();
     network->beginSimulation();
 }
