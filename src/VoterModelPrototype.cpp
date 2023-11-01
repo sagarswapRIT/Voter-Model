@@ -5,7 +5,6 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
-#include <random>
 using namespace std;
 
 /**
@@ -432,12 +431,54 @@ class ComplexNetwork{
         }
         cout<<"Difference = "<<difference<<endl;
     }
+
+    void printGraphStats(){
+        unsigned long degree=0;
+        for(Node* node: nodeList){
+            if(node->size!=node->neighbours.size())
+                cout<<"Size don't match"<<endl;
+            degree+=node->size;
+        }
+        double degreeF=(double)degree/(double)nodeCount;
+        cout<<"Average Degree = "<<degreeF<<endl;
+        cout<<"Diameter of Graph = "<<getDiameter()<<endl;
+    }
+
+    int getDiameter(){
+        int diameter=-1;
+        for(int i=0;i<nodeCount;i++){
+            Node* node=nodeList[i];
+            vector<int> distance(vertices, -1);
+            bfs(node, distance);
+            //print distance vector
+        }
+
+    }
+
+    void bfs(Node* node, vector<int>& distance){
+        queue<Node*> q;
+        q.push(node);
+
+        while(!q.empty()){
+            Node* n=q.front();
+            q.pop();
+
+            for(int v:n->neighbours){
+                Node* V=this->getNode(v);
+                if(distance[v]==-1){
+                    distance[v]=distance[n->getId()]+1;
+                    q.push(V);
+                }
+            }
+        }
+    }
 };
 
 int main(){
     ComplexNetwork* network=new ComplexNetwork("facebook_medium", 100000, 1, 0.1);
     network->loadData();
-    network->beginSimulation();
+    //network->beginSimulation();
+    network->printGraphStats();
 }
 
 //TODO: Plot number of pop vs discordant edges.

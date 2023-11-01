@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-file=pd.read_csv(r"./Voter-Model/data/output/facebook_medium_100_812.txt", sep=" ")
+file=pd.read_csv(r"./Voter-Model/data/output/facebook_medium_50_168.txt", sep=" ")
 fig=plt.figure(figsize=(10, 10))
 plt.scatter(file["Pop"], file["DiscEdge"], c=file["Epoch"])
 plt.xlabel("Opinion Density")
