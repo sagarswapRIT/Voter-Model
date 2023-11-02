@@ -10,8 +10,8 @@ using namespace std;
 //TODO: Change all call by values to call by reference
 //TODO: Optimise the search fucntionality in nodeList since they are sorted and can be referenced directlyadsadas
 
-//to compile the code in the terminal: g++ ComplexNetwork.cpp -o ComplexNetwork
-//to run the code in the terminal: ./ComplexNetwork
+//to compile the code in the terminal: g++ ComplexNetwork.cpp -o ComplexNetwork Shifted to Visual Studio Code
+//to run the code in the terminal: ./ComplexNetworkyo
 
 
 ComplexNetwork::ComplexNetwork(int nodeC, int edgeC, int card){
