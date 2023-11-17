@@ -6,3 +6,6 @@ g++ VoterModelPrototype.cpp -o outputName
 
 To run pgm:
 ./output
+
+To create issue:
+gh issue create --title "My Issue" --body "Here are the details"

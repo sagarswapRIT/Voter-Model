@@ -495,7 +495,7 @@ class ComplexNetwork{
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("facebook", 100000, 1, 0.1);
+    ComplexNetwork* network=new ComplexNetwork("liveJournal", 100000, 5, 0.01);
     network->loadData();
     //network->beginSimulation();
     network->printGraphStats();
