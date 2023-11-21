@@ -61,23 +61,39 @@ class Node{
  * Input parameter: a positive int variable which contains the neighbour ID we want to actiave/deactivate
 */
     void inactivateEdge(int neighbour){
+        bool found=false;
         for(int i=0;i<neighbours.size();i++){
-            if(neighbours[i] == neighbour && neighbours[i]>=0)
+            if(neighbours[i] == neighbour && neighbours[i]>=0){
                 neighbours[i]*=-1;
+                found=true;
+                break;
+            }
             else if(neighbours[i] == -1*neighbour){
                 cout<<"Already Inactive"<<endl;
+                found=true;
+                break;
             }
         }
+        if(!found)
+            cout<<"Edge not found"<<endl;
     }
 
     void activateEdge(int neighbour){
+        bool found=false;
         for(int i=0;i<neighbours.size();i++){
-            if(neighbours[i] == -1*neighbour && neighbours[i]<0)
+            if(neighbours[i] == -1*neighbour && neighbours[i]<0){
                 neighbours[i]*=-1;
+                found=true;
+                break;
+            }
             else if(neighbours[i] == neighbour){
                 cout<<"Already Active"<<endl;
+                found=true;
+                break;
             }
         }
+        if(!found)
+            cout<<"Edge not found"<<endl;
     }
 
 /**
@@ -201,6 +217,7 @@ class ComplexNetwork{
     double rewiringProbability, relativeSize;
     std::vector<Node*> nodeList;
     std::string inputFileName, outputFileName;
+    long rew=0, con=0;
 
     ComplexNetwork(std::string infname, int epoch, int step, double vol, double relSize){
         cout<<"Constructor reached"<<endl;
@@ -212,7 +229,7 @@ class ComplexNetwork{
         epochLimit=epoch;
         stepCount=step;
         rewiringProbability=vol;
-        relativeSize=relSize;
+        relativeSize=1-relSize;
     }
 
 /**
@@ -286,7 +303,7 @@ class ComplexNetwork{
 */
     std::string getSummary(int epoch){
         std::ostringstream oss;
-        long discEdge=this->getDiscordantEdgeCount();
+        long discEdge=this->getActiveDiscordantEdgeCount();
         if(discEdge<=10 || discEdge<0.00025*edgeCount)
             exit(0);
         oss<<(epoch+1)<<" "<<stat0<<" "<<(stat0/(stat1*1.0+stat0*1.0))<<" "<<discEdge;
@@ -322,7 +339,6 @@ class ComplexNetwork{
                 int rando=this->getRandomNumber(100);
                 if(relativeSize*50>rando){
                     Node* neighbour=this->getNode(neigh);
-                    checkInactivity(node, neighbour);
                     node->inactivateEdge(neigh);
                     neighbour->inactivateEdge(node->getId());
                     checkInactivity(node, neighbour);
@@ -333,7 +349,7 @@ class ComplexNetwork{
     }
 
     void checkInactivity(Node* n1, Node* n2){
-        int v1=-6969, v2=-6969;
+        int v1=0, v2=0;
         for(int x: n1->neighbours){
             if(abs(x)==n2->getId())
                 v1=x;
@@ -343,8 +359,13 @@ class ComplexNetwork{
                 v2=x;
         }
 
-        if(v1==-6969 || v2==-6969)
+        if(v1==0 || v2==0){
             cout<<"Neighbour actually not present"<<endl;
+            cout<<n1->getId()<<" -> ";
+            n1->printAllNeighbours(100);
+            cout<<n2->getId()<<" -> ";
+            n2->printAllNeighbours(100);
+        }
         else if((v1>0 && v2<0) || (v1<0 && v2>0))
             cout<<"Activations are of different signs"<<endl;
     }
@@ -370,6 +391,8 @@ class ComplexNetwork{
             std::string summary=getSummary(epoch);
             cout<<summary<<endl;
             outputFile << summary <<endl;
+            //double ans=double(this->rew*100.0/(this->rew+this->con));
+            //cout<<"Rewire Percentage = "<<ans<<endl;
         }
         outputFile.close();
     }
@@ -403,6 +426,7 @@ class ComplexNetwork{
  *                      outputNode - pointer to the output node.
 */
     void convince(Node* inputNode, Node* outputNode){
+        this->con++;
         if(inputNode->getState()==outputNode->getState()){
             cout<<"Dingus"<<endl;
             return; //no convincing needed since they have same opinion
@@ -424,6 +448,7 @@ class ComplexNetwork{
  *                      outputNode - pointer to the output node.
 */
     void rewire(Node* adderNode, Node* deleterNode){
+        this->rew++;
         if(!adderNode->hasInactiveEdge())
             return;
         Node* inactiveNode=this->getNode(adderNode->getInactiveEdgeID());
@@ -437,12 +462,12 @@ class ComplexNetwork{
  * Iterates through all the nodes and gives the number of discordant edges
  * Retrun : Long Integer containing the count of discordant edges
 */
-    long getDiscordantEdgeCount(){
+    long getActiveDiscordantEdgeCount(){
         long count=0;
         for(Node* node: nodeList){
             for(int id:node->neighbours){
                 if(id<0)
-                    id*=-1;
+                    continue;
                 Node* neighbour=this->getNode(id);
                 if(node->getState()!=neighbour->getState())
                     count++;
@@ -508,11 +533,56 @@ class ComplexNetwork{
         }
         cout<<"Difference = "<<difference<<endl;
     }
+
+    void getSubnetworkStats(){
+        int activeEdge=0, inactiveEdge=0, discordantEdge=0, activeDiscordantEdge=0;
+        for(Node* node: this->nodeList){
+            for(int neigh: node->neighbours){
+                Node* neighbour=this->getNode(abs(neigh));
+                if(neigh>0){
+                    activeEdge++;
+                    if(node->getState()!=neighbour->getState())
+                        activeDiscordantEdge++;
+                }
+                else
+                    inactiveEdge++;
+                if(node->getState()!=neighbour->getState())
+                    discordantEdge++;
+            }
+        }
+        discordantEdge/=2;
+        activeDiscordantEdge/=2;
+        double perc=double(activeEdge*100.0/(activeEdge+inactiveEdge));
+        cout<<"Active Edges = "<<activeEdge<<", Inactive edges = "<<inactiveEdge<<endl;
+        cout<<"activeDiscordantEdges = "<<activeDiscordantEdge<<", DiscordantEdges = "<<discordantEdge<<endl;
+        cout<<"Percent Active Edges = "<<perc<<endl;
+        cout<<"ADE = "<<this->getActiveDiscordantEdgeCount()<<endl;
+    }
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("facebook_medium", 100000, 500, 0.8, 0.8);
+    ComplexNetwork* network=new ComplexNetwork("facebook", 100000, 10, 0.0, 0.8); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
     network->loadData();
+    //network->getSubnetworkStats();
+    // Node* n1=network->getNode(1);
+    // Node* n2=network->getNode(2);
+    // Node* n3=network->getNode(3);
+    // Node* n4=network->getNode(4);
+    // n1->inactivateEdge(2);
+    // n2->inactivateEdge(1);
+    // n1->inactivateEdge(3);
+    // n3->inactivateEdge(1);
+    // n4->inactivateEdge(5);
+    // n1->printAllNeighbours(10);
+    // n2->printAllNeighbours(10);
+    // n3->printAllNeighbours(10);
+    // n4->printAllNeighbours(10);
+    // network->rewire(n1, n4);
+    // cout<<endl<<"Rewiring between 1 and 4"<<endl;
+    // n1->printAllNeighbours(10);
+    // n2->printAllNeighbours(10);
+    // n3->printAllNeighbours(10);
+    // n4->printAllNeighbours(10);
     network->beginSimulation();
     cout<<"Completed"<<endl;
 }
