@@ -304,8 +304,8 @@ class ComplexNetwork{
     std::string getSummary(int epoch){
         std::ostringstream oss;
         long discEdge=this->getActiveDiscordantEdgeCount();
-        if(discEdge<=10 || discEdge<0.00025*edgeCount)
-            exit(0);
+        if(discEdge<=50 || discEdge<0.001*edgeCount)
+            return "Resolved";
         oss<<(epoch+1)<<" "<<stat0<<" "<<(stat0/(stat1*1.0+stat0*1.0))<<" "<<discEdge;
         return oss.str();
     }
@@ -391,6 +391,9 @@ class ComplexNetwork{
             std::string summary=getSummary(epoch);
             cout<<summary<<endl;
             outputFile << summary <<endl;
+            if(summary.compare("Resolved")==0)
+                exit(0);
+
             //double ans=double(this->rew*100.0/(this->rew+this->con));
             //cout<<"Rewire Percentage = "<<ans<<endl;
         }
@@ -561,7 +564,7 @@ class ComplexNetwork{
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("facebook", 100000, 10, 0.0, 0.8); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
+    ComplexNetwork* network=new ComplexNetwork("facebook", 100000, 180, 0.97, 0.8); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
     network->loadData();
     //network->getSubnetworkStats();
     // Node* n1=network->getNode(1);
