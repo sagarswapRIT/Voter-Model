@@ -276,7 +276,7 @@ class ComplexNetwork{
  * Return Value - A pointer to the node if it exists.
 */
     Node* getNode(int identity){
-        if(identity<0){
+        if(identity<=0){
             cout<<"Negative node requested"<<endl;
             //identity*=-1;
         }
@@ -301,11 +301,8 @@ class ComplexNetwork{
 /**
  * This function returns a string containing the number of nodes in each state at that particular time in the network, its opinion density, number of discordant edges and epoch number
 */
-    std::string getSummary(int epoch){
+    std::string getSummary(int epoch, long discEdge){
         std::ostringstream oss;
-        long discEdge=this->getActiveDiscordantEdgeCount();
-        if(discEdge<=50 || discEdge<0.001*edgeCount)
-            return "Resolved";
         oss<<(epoch+1)<<" "<<stat0<<" "<<(stat0/(stat1*1.0+stat0*1.0))<<" "<<discEdge;
         return oss.str();
     }
@@ -377,25 +374,35 @@ class ComplexNetwork{
  *                      rewiringProbability - The frequency with which nodes ineract with each other.
 */
     void beginSimulation(){
-        cout<<getSummary(-1)<<endl;
+        long discEdge=this->getActiveDiscordantEdgeCount();
+        bool altEdgeSelectionAlgo=false;
+        cout<<getSummary(-1, discEdge)<<endl;
         ofstream outputFile;
         outputFile.open(this->outputFileName);
         outputFile<<"Epoch Pop Frac DiscEdge"<<endl;
         for(int epoch=0; epoch<this->epochLimit; epoch++){
-            for(int step=0; step<this->stepCount; step++)
-                interact();
+            for(int step=0; step<this->stepCount; step++){
+                if(!altEdgeSelectionAlgo)
+                    interact();
+                else
+                    interactAlt();
+            }
             if(epoch%10==0){
                 cout<<"Epoch No. "<<epoch<<endl;
                 checkInconsitentNeighbours();
             }
-            std::string summary=getSummary(epoch);
+            discEdge=this->getActiveDiscordantEdgeCount();
+            std::string summary=getSummary(epoch, discEdge);
             cout<<summary<<endl;
             outputFile << summary <<endl;
-            if(summary.compare("Resolved")==0)
+            if(discEdge<=3){
+                cout<<"Simulation Complete!\nWe Won!!"<<endl;
+                outputFile<<"Resolved"<<endl;
+                outputFile.close();
                 exit(0);
-
-            //double ans=double(this->rew*100.0/(this->rew+this->con));
-            //cout<<"Rewire Percentage = "<<ans<<endl;
+            }
+            if(discEdge<0.005*this->edgeCount && !altEdgeSelectionAlgo)
+                altEdgeSelectionAlgo=true;
         }
         outputFile.close();
     }
@@ -421,6 +428,28 @@ class ComplexNetwork{
             this->rewire(node, neighbour);
         else 
             this->convince(node, neighbour);
+    }
+
+    void interactAlt(){
+        std::vector<Node*> roster;
+        for(Node* node: nodeList){
+            if(node->hasInactiveEdge() && this->hasActiveDiscordantEdge(node)){
+                roster.push_back(node);
+            }
+        }
+        if(roster.size()<=1){
+            cout<<"Simulation Complete!\nWe won!"<<endl;
+            exit(0);
+        }
+        int rand=this->getRandomNumber(roster.size()-1);
+        //cout<<"random "<<rand<<" "<<edges.size()<<endl;
+        Node* node1=roster[rand];
+        Node* node2=this->getActiveDiscordantEdge(node1);
+        rand=this->getRandomNumber(100);
+        if(rand<=rewiringProbability*100)
+            this->rewire(node1, node2);
+        else 
+            this->convince(node1, node2);
     }
 
 /**
@@ -508,6 +537,7 @@ class ComplexNetwork{
             if(n->getState()!=node->getState())
                 return n;
         }
+        cout<<"Active discordant edge retrival failed"<<endl;
         return nullptr;
     }
 
@@ -564,7 +594,7 @@ class ComplexNetwork{
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("facebook", 100000, 180, 0.97, 0.8); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
+    ComplexNetwork* network=new ComplexNetwork("facebook", 100000, 50, 0.5, 0.8); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
     network->loadData();
     //network->getSubnetworkStats();
     // Node* n1=network->getNode(1);
