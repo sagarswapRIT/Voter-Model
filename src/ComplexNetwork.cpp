@@ -397,7 +397,6 @@ class ComplexNetwork{
             outputFile << summary <<endl;
             if(discEdge<=3){
                 cout<<"Simulation Complete!\nWe Won!!"<<endl;
-                outputFile<<"Resolved"<<endl;
                 outputFile.close();
                 exit(0);
             }
@@ -594,28 +593,8 @@ class ComplexNetwork{
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("facebook", 100000, 50, 0.5, 0.8); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
+    ComplexNetwork* network=new ComplexNetwork("facebook", 100000, 50, 0.7, 0.6); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
     network->loadData();
-    //network->getSubnetworkStats();
-    // Node* n1=network->getNode(1);
-    // Node* n2=network->getNode(2);
-    // Node* n3=network->getNode(3);
-    // Node* n4=network->getNode(4);
-    // n1->inactivateEdge(2);
-    // n2->inactivateEdge(1);
-    // n1->inactivateEdge(3);
-    // n3->inactivateEdge(1);
-    // n4->inactivateEdge(5);
-    // n1->printAllNeighbours(10);
-    // n2->printAllNeighbours(10);
-    // n3->printAllNeighbours(10);
-    // n4->printAllNeighbours(10);
-    // network->rewire(n1, n4);
-    // cout<<endl<<"Rewiring between 1 and 4"<<endl;
-    // n1->printAllNeighbours(10);
-    // n2->printAllNeighbours(10);
-    // n3->printAllNeighbours(10);
-    // n4->printAllNeighbours(10);
     network->beginSimulation();
     cout<<"Completed"<<endl;
 }
