@@ -33,6 +33,7 @@
 
 #Text Files
 *.txt
+*.csv
 
 #Images
 *.png
