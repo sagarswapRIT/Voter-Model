@@ -1,5 +1,4 @@
 import os
-import seaborn as sns
 import pandas as pd
 import numpy as np
 
@@ -16,7 +15,10 @@ df=pd.DataFrame()
 for file in files:
     with open(os.path.join(folder_path, file), 'r') as f:
         content = pd.read_csv(folder_path+"/"+file, names=['Epoch', 'Pop', 'Frac'+str(fileno), 'DiscEdge'+str(fileno)], skiprows=1, sep=" ")
-        content=content.drop(['Epoch', 'Pop'], axis=1)
+        content=content.drop(['Epoch', 'Pop'], axis=1)    
+        last_row_content=content.iloc[-1, 0]
+        if last_row_content<0.5:
+            content['Frac'+str(fileno)]=1-content['Frac'+str(fileno)]
         row, col=content.shape
         #print(f"File Name: {file}\nContent: {content}\n")
         file=file.split("_")
