@@ -4,7 +4,7 @@ import numpy as np
 
 
 # specify the path to the folder containing the files
-folder_path = "./data/output/"
+folder_path = "./data/output/facebook/"
 
 # list all the files in the folder
 files = os.listdir(folder_path)
@@ -22,6 +22,13 @@ for file in files:
         row, col=content.shape
         #print(f"File Name: {file}\nContent: {content}\n")
         file=file.split("_")
+
+        if last_row_content<0.5:
+            print(file[1], '%', 1-last_row_content)
+        else:
+            print(file[1], '%', last_row_content)
+
+
         ncol=np.ones(row, dtype=int)
         ncol.fill(file[1])
         ncol=pd.DataFrame(ncol, columns=['Rewire'+str(fileno)])
@@ -29,4 +36,4 @@ for file in files:
         #print(content)
     fileno=fileno+1
     df=pd.merge(df, content, left_index=True, right_index=True, how='outer')
-df.to_csv('./data/summaryOutput/summary_'+file[0]+'.csv')
+#df.to_csv('./data/summaryOutput/summary_'+file[1]+'.csv')

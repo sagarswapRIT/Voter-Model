@@ -464,6 +464,31 @@ class ComplexNetwork{
         return double(cTri)/double(aTri);
     }
 
+    void getSubnetworkStats(){
+        int activeEdge=0, inactiveEdge=0, discordantEdge=0, activeDiscordantEdge=0;
+        for(Node* node: this->nodeList){
+            for(int neigh: node->neighbours){
+                Node* neighbour=this->getNode(abs(neigh));
+                if(neigh>0){
+                    activeEdge++;
+                    if(node->getState()!=neighbour->getState())
+                        activeDiscordantEdge++;
+                }
+                else
+                    inactiveEdge++;
+                if(node->getState()!=neighbour->getState())
+                    discordantEdge++;
+            }
+        }
+        discordantEdge/=2;
+        activeDiscordantEdge/=2;
+        double perc=double(activeEdge*100.0/(activeEdge+inactiveEdge));
+        cout<<"Active Edges = "<<activeEdge<<", Inactive edges = "<<inactiveEdge<<endl;
+        cout<<"activeDiscordantEdges = "<<activeDiscordantEdge<<", DiscordantEdges = "<<discordantEdge<<endl;
+        cout<<"Percent Active Edges = "<<perc<<endl;
+        cout<<"ADE = "<<this->getActiveDiscordantEdgeCount()<<endl;
+    }
+
     // int getDiameter(){
     //     int diameter=-1;
     //     for(int i=0;i<nodeCount;i++){

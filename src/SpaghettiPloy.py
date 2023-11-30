@@ -3,11 +3,11 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-data=pd.read_csv("./data/summaryOutput/summary_facebook.csv", delimiter=",")
+data=pd.read_csv("./data/summaryOutput/summary_medium.csv", delimiter=",")
 fig=plt.figure()
 print(data.shape[1])
 x=[0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-for fileno in range(1, 51):
+for fileno in range(1, 15):
     if data['Rewire'+str(fileno)][1]==10:
         color='C1'
     elif data['Rewire'+str(fileno)][1]==20:
