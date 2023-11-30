@@ -4,7 +4,7 @@ import numpy as np
 
 
 # specify the path to the folder containing the files
-folder_path = "./data/output/facebook/"
+folder_path = "./data/output/facebookMedium/"
 
 # list all the files in the folder
 files = os.listdir(folder_path)

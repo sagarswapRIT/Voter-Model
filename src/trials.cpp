@@ -607,7 +607,7 @@ class ComplexNetwork{
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("facebookMedium", 100000, 100, 0.8, 0.9); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
+    ComplexNetwork* network=new ComplexNetwork("createdGraph", 100000, 100, 0.5, 0.9); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
     network->loadData();
     network->beginSimulation();
     cout<<"Completed"<<endl;

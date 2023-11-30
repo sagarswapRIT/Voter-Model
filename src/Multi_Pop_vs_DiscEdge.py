@@ -17,12 +17,13 @@ d6=False
 d7=False
 d8=False
 d9=False
+d10=False
 
 for file in files:
     with open(os.path.join(folder_path, file), 'r') as f:
         content = pd.read_csv(folder_path+"/"+file, names=['Epoch', 'Pop', 'Frac', 'DiscEdge'], skiprows=1, sep=" ")
-        if content.size>5000:
-            content=content.head(5000)
+        # if content.size>5000:
+        #     content=content.head(5000)
         file=file.split('_')
         if file[1]=='0':
             if d0==False:
@@ -84,6 +85,14 @@ for file in files:
                 d9=True
             else:
                 ax.scatter(content['Frac'], content['DiscEdge'], c='magenta', s=1)
+        elif file[1]=='100':
+            if d10==False:
+                ax.scatter(content['Frac'], content['DiscEdge'], c='black', label='1.0', s=1)
+                d10=True
+            else:
+                ax.scatter(content['Frac'], content['DiscEdge'], c='black', s=1)
 
+plt.xlabel("Opinion Density")
+plt.ylabel("Number of Discordant Edges (l01)")
 plt.legend(loc='upper right')
 plt.show()
