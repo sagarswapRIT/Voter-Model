@@ -187,16 +187,37 @@ class Node{
     }
 
 /**
- * retuns the ID of the first in-active edge among the neighbours of this node.
+ * retuns the ID of a random in-active edge among the neighbours of this node.
  * Return Value: Returns the positive id of the in-active edge. Returns -1 if there are no inactvie edges.
 */
     int getInactiveEdgeID(){
+        std::vector<int> candidates;
         for(int n: neighbours){
             if(n<0)
-                return n*-1;
+                candidates.push_back(abs(n));
         }
-        cout<<"No Inactive Edge found";
-        return -1;
+        if(candidates.size()==0){
+            cout<<"No Inactive Edge found";
+            return -1;
+        }
+        else if(candidates.size()==1)
+            return candidates[0];
+        else{
+            for(;;){
+                for(int candidate: candidates){
+                    int rand=getRandomNumber(100);
+                    if(rand>80)
+                        return candidate;
+                }
+            }
+        }
+    }
+
+    int getRandomNumber(int limit){
+        std::random_device dev;
+        std::mt19937 rng(dev());
+        std::uniform_int_distribution<std::mt19937::result_type> dist6(0, limit); 
+        return dist6(rng);
     }
 };
 
@@ -407,7 +428,7 @@ class ComplexNetwork{
             cout<<summary<<endl;
             outputFile << summary <<endl;
 
-            if(discEdge<0.01*this->edgeCount && !altEdgeSelectionAlgo){
+            if(discEdge<0.001*this->edgeCount && !altEdgeSelectionAlgo){
                 altEdgeSelectionAlgo=true;
                 cout<<"Switching Algorithms"<<endl;
             }
@@ -508,6 +529,8 @@ class ComplexNetwork{
     long getActiveDiscordantEdgeCount(){
         long count=0;
         for(Node* node: nodeList){
+            if(!node->hasInactiveEdge())
+                continue;
             for(int id:node->neighbours){
                 if(id<0)
                     continue;
@@ -607,7 +630,7 @@ class ComplexNetwork{
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("createdGraph", 100000, 100, 0.5, 0.9); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
+    ComplexNetwork* network=new ComplexNetwork("facebook", 100000, 100, 0.5, 0.7); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
     network->loadData();
     network->beginSimulation();
     cout<<"Completed"<<endl;
