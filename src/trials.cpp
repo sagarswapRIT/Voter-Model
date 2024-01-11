@@ -443,15 +443,22 @@ class ComplexNetwork{
 */
     bool interact(){
         bool ideal=false;
+        double rando=this->getRandomNumber();
         Node* node;
         do{
             long rand=this->getRandomNumber(this->nodeCount-1);
             rand++;
             node=this->getNode(rand);
-            if(node->hasInactiveEdge() && this->hasActiveDiscordantEdge(node))
-                ideal=true;
+            if(rando<=rewiringProbability){
+                if(node->hasInactiveEdge() && this->hasActiveDiscordantEdge(node))
+                    ideal=true;
+            }
+            else{
+                if(this->hasActiveDiscordantEdge(node))
+                    ideal=true;
+            }
         }while(!ideal);
-        double rando=this->getRandomNumber();
+        
         Node* neighbour=this->getActiveDiscordantEdge(node);
         if(rando<=rewiringProbability)
             this->rewire(node, neighbour);
@@ -462,9 +469,15 @@ class ComplexNetwork{
 
     bool interactAlt(){
         std::vector<Node*> roster;
+        double rando=this->getRandomNumber();
         for(Node* node: nodeList){
-            if(node->hasInactiveEdge() && this->hasActiveDiscordantEdge(node)){
-                roster.push_back(node);
+            if(rando<=rewiringProbability){
+                if(node->hasInactiveEdge() && this->hasActiveDiscordantEdge(node))
+                    roster.push_back(node);
+            }
+            else{
+                if(this->hasActiveDiscordantEdge(node))
+                    roster.push_back(node);
             }
         }
         if(roster.size()<=1){
@@ -475,7 +488,6 @@ class ComplexNetwork{
         //cout<<"random "<<rand<<" "<<edges.size()<<endl;
         Node* node1=roster[rand];
         Node* node2=this->getActiveDiscordantEdge(node1);
-        double rando=this->getRandomNumber();
         if(rando<=rewiringProbability)
             this->rewire(node1, node2);
         else 
@@ -523,7 +535,7 @@ class ComplexNetwork{
     }
 
 /**
- * Iterates through all the nodes and gives the number of discordant edges
+ * Iterates through all the nodes and gives the number of discordant edges except for nodes which have no inactive edges
  * Retrun : Long Integer containing the count of discordant edges
 */
     long getActiveDiscordantEdgeCount(){
@@ -630,7 +642,7 @@ class ComplexNetwork{
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("facebook", 100000, 100, 0.5, 0.7); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
+    ComplexNetwork* network=new ComplexNetwork("facebookMedium", 100000, 100, 0.5, 0.7); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
     network->loadData();
     network->beginSimulation();
     cout<<"Completed"<<endl;
