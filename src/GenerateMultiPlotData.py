@@ -4,7 +4,7 @@ import numpy as np
 
 
 # specify the path to the folder containing the files
-folder_path = "./data/output/facebookMedium/"
+folder_path = "./data/output/facebookMedium/GT1"
 
 # list all the files in the folder
 files = os.listdir(folder_path)
@@ -36,4 +36,4 @@ for file in files:
         #print(content)
     fileno=fileno+1
     df=pd.merge(df, content, left_index=True, right_index=True, how='outer')
-#df.to_csv('./data/summaryOutput/summary_'+file[1]+'.csv')
+df.to_csv('./data/summaryOutput/summary_GT1_'+file[1]+'.csv')

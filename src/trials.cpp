@@ -20,7 +20,7 @@ using namespace std;
  * The member variables are:
  *      id - Int variable containing the id number of the node. The id can have values ranging from 0 to total Number of Nodes and is automatically assigned by the program while creating the node, stating from 0 and incrementing by 1 every time.
  *      size - An integer variable which will hold the size of the neighbours' array so that it can be dynamically allocated later.
- *      state - A boolean variable which contains the state (0/1) of the node. Randomly assigned while creating the node and can change when interacting with a node which has a different state.
+ *      state - A boolean variable which contains the state (0/1) of the node. Randomly assigned while creating the node and can change when interacting with a node which has a different state. 0-> Co-operator, 1-> Defector
  *      neighbours - An integer array containing the id numbers of all of its neighbours
 */
 class Node{
@@ -221,6 +221,12 @@ class Node{
     }
 };
 
+
+
+
+
+
+
 /**
  * This is the ComplexNetwork class. It creates several instances of the Node class and stores their locations by reference so that we can access every node. 
  * This class is also responsible for the interaction between the nodes in the Complex System.
@@ -231,18 +237,19 @@ class Node{
  *      stat1 - An integer variable which keeps a count of the number of nodes with state = 1
  *      nodeList - A vector of Node* type which contains pointers to every Node so that we can call them by reference.
  *      filename - A string object which contains the relative location of the data file which will be used to generate the network.
+ *      payOff - Value between 0 and 1 which decides the fractional payoff incase of a C-D relation
 */
 class ComplexNetwork{
     public:
     //node status as false is related to stat0 while true is related to stat1
     int nodeCount, edgeCount, stat0, stat1;
     int epochLimit, stepCount;
-    double rewiringProbability, relativeSize;
+    double rewiringProbability, relativeSize, payOff;
     std::vector<Node*> nodeList;
     std::string inputFileName, outputFileName;
     long rew=0, con=0;
 
-    ComplexNetwork(std::string infname, int epoch, int step, double vol, double relSize){
+    ComplexNetwork(std::string infname, int epoch, int step, double vol, double relSize, int defector){
         cout<<"Constructor reached"<<endl;
         this->inputFileName="../data/input/"+infname+".txt";
         int n=vol*100.0;
@@ -253,6 +260,7 @@ class ComplexNetwork{
         stepCount=step;
         rewiringProbability=vol;
         relativeSize=1-relSize;
+        payOff=defector;
     }
 
 /**
@@ -417,6 +425,7 @@ class ComplexNetwork{
                     outputFile << summary <<endl;
                     this->recountStates();
                     cout<<"Simulation Completed!"<<endl;
+                    this->verifyNoDiscordantLinks();
                     exit(0);
                 }
             }
@@ -507,6 +516,12 @@ class ComplexNetwork{
             cout<<"Dingus"<<endl;
             return; //no convincing needed since they have same opinion
         }
+
+        double phi=this->getPhi(inputNode, outputNode);
+        double rando=this->getRandomNumber();
+        if(rando<phi) //condition for not convincing
+            return; 
+
         outputNode->changeState();
         if(outputNode->getState()){
             stat1++;
@@ -532,6 +547,30 @@ class ComplexNetwork{
         inactiveNode->activateEdge(adderNode->getId());
         adderNode->inactivateEdge(deleterNode->getId());
         deleterNode->inactivateEdge(adderNode->getId());
+    }
+
+    double getPhi(Node* inputNode, Node* outputNode){
+        double score1=this->getScore(inputNode), score2=this->getScore(outputNode);
+        double alpha=0.5;
+        return 1.0/(1.0+exp(alpha*(score1-score2)));
+    }
+
+    double getScore(Node* node){
+        double score=0;
+        for(int neigh: node->neighbours){
+            if(neigh<0)
+                continue;
+            Node* neighbour=this->getNode(neigh);
+            bool state1=node->getState();
+            bool state2=neighbour->getState();
+            if(!state1 && !state2)
+                score+=1;
+            else if(state1 && state2)
+                score+=payOff;
+            else if(state1 && !state2)
+                score+=1+payOff;
+        }
+        return score;
     }
 
 /**
@@ -639,10 +678,25 @@ class ComplexNetwork{
         if(s1!=this->stat0 || s2!=this->stat1)
             cout<<"Counting Mismatch"<<endl;
     }
+
+    void verifyNoDiscordantLinks(){
+        for(Node* node:nodeList){
+            for(int neigh: node->neighbours){
+                if(neigh<0)
+                    continue;
+                Node* neighbour=this->getNode(neigh);
+                if(node->getState()!=neighbour->getState()){
+                    cout<<"DISCORDANT EDGE DETECTED!!"<<endl;
+                    return;
+                }
+            }
+        }
+        cout<<"No discordant Edge Detected! <3"<<endl;
+    }
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("facebookMedium", 100000, 100, 0.5, 0.7); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
+    ComplexNetwork* network=new ComplexNetwork("facebookMedium", 100000, 100, 0.1, 0.7, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size, defector_payoff
     network->loadData();
     network->beginSimulation();
     cout<<"Completed"<<endl;

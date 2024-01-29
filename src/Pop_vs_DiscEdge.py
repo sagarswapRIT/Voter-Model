@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-filename="facebookMedium_50_838"
+filename="facebookMedium_80_785"
 file=pd.read_csv(r"/home/sagarswap/Programming/Capstone/data/output/"+filename+".txt", sep=" ")
 fig=plt.figure(figsize=(10, 10))
 plt.scatter(file["Frac"], file["DiscEdge"], c=file["Epoch"])
