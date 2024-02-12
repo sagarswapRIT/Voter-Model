@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 
-folder_path = "./data/output/facebookMedium/"
+folder_path = "./data/output/GT3/"
 files=os.listdir(folder_path)
 
 data0=[]

@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-folder_path = "./data/output/facebookMedium/GT1"
+folder_path = "./data/output/GT3"
 files=os.listdir(folder_path)
 fig=plt.figure()
 ax=fig.add_subplot(111)

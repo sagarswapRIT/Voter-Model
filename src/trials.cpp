@@ -686,8 +686,8 @@ class ComplexNetwork{
                     continue;
                 Node* neighbour=this->getNode(neigh);
                 if(node->getState()!=neighbour->getState()){
-                    cout<<"DISCORDANT EDGE DETECTED!!"<<endl;
-                    return;
+                    cout<<"DISCORDANT EDGE DETECTED!! ";
+                    cout<<node->getId()<<" and "<<neighbour->getId()<<endl;
                 }
             }
         }
@@ -696,7 +696,7 @@ class ComplexNetwork{
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("facebookMedium", 100000, 100, 0.1, 0.7, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size, defector_payoff
+    ComplexNetwork* network=new ComplexNetwork("GT3", 100000, 100, 0.8, 0.6, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size, defector_payoff
     network->loadData();
     network->beginSimulation();
     cout<<"Completed"<<endl;
