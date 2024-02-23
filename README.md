@@ -11,3 +11,9 @@ g++ VoterModelPrototype.cpp -o outputName
 
 To run pgm:
 ./output
+
+If you want to see stats of just 1 simulation, run Pop_vs_DiscEdge.py
+
+If you want to see stats of a group of simulations, first place them all in 1 folder inside the output folder
+Then run GenerateMultiPlotData.py, be sure to specifyoutputfile along with the input folder
+Then run SpaghettiPlot.py and BoxPlots.py

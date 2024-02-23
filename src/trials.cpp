@@ -221,6 +221,75 @@ class Node{
     }
 };
 
+
+
+
+
+
+class Edge{
+    Node* nodeA;
+    Node* nodeB;
+    bool active;
+    public:
+    int nodeAID, nodeBID;
+    
+    Edge(Node* A, Node* B){
+        nodeA = A;
+        nodeB = B;
+        nodeAID = A->id;
+        nodeBID = B->id;
+        active = true;
+    }
+
+    bool isActive(){
+        return active;
+    }
+
+    void activateEdge(){
+        if(active){
+            cout<<"Edge is already active!"<<endl;
+            return;
+        }
+        active=true;
+    }
+
+    void inactivateEdge(){
+        if(!active){
+            cout<<"Edge is already inactive!"<<endl;
+            return;
+        }
+        active=false;
+    }
+
+    void printNodes(){
+        cout<<"The nodes are "<<nodeAID<<" and "<<nodeBID<<endl;
+    }
+
+    Node* getNodeA(){
+        if(nodeA==nullptr){
+            cout<<"Node A reference is null"<<endl;
+            return nullptr;
+        }
+        else
+            return nodeA;
+    }
+
+    Node* getNodeB(){
+        if(nodeB==nullptr){
+            cout<<"Node B reference is null"<<endl;
+            return nullptr;
+        }
+        else
+            return nodeB;
+    }
+};
+
+
+
+
+
+
+
 /**
  * This is the ComplexNetwork class. It creates several instances of the Node class and stores their locations by reference so that we can access every node. 
  * This class is also responsible for the interaction between the nodes in the Complex System.
@@ -242,17 +311,17 @@ class ComplexNetwork{
     std::string inputFileName, outputFileName;
     long rew=0, con=0;
 
-    ComplexNetwork(std::string infname, int epoch, int step, double vol, double relSize){
+    ComplexNetwork(std::string infname, int epoch, int step, double rewire, double relSize){
         cout<<"Constructor reached"<<endl;
-        this->inputFileName="../data/input/"+infname+".txt";
-        int n=vol*100.0;
-        this->outputFileName="../data/output/"+infname+"_"+std::to_string(n)+"_"+std::to_string(getRandomNumber(1000))+".txt";
+        this->inputFileName="../data/input/WattsStrogatzGraphs/"+infname+".txt";
+        int n=rewire*100.0;
+        this->outputFileName="../data/output/WattsStrogatzGraphs/"+infname+"_"+std::to_string(n)+"_"+std::to_string(getRandomNumber(1000))+".txt";
         stat0=0;
         stat1=0;
         epochLimit=epoch;
         stepCount=step;
-        rewiringProbability=vol;
-        relativeSize=1-relSize;
+        rewiringProbability=rewire; 
+        relativeSize=relSize;
     }
 
 /**
@@ -268,7 +337,6 @@ class ComplexNetwork{
         string tp;
         int cc=0;
         while(getline(file, tp)){
-            //cout<< tp <<"\n";
             std::istringstream is(tp);
             int inputNode, outputNode;
             is>>inputNode;
@@ -291,11 +359,12 @@ class ComplexNetwork{
         cout<<"Data Loaded"<<endl;
         file.close();
         generateSubNetwork();
+        cout<<"Nodes = "<<this->nodeCount<<"\tEdges = "<<this->edgeCount<<endl;
     }
 
 /**
  * This function returns the reference to a node.
- * Input Parameter - An integer variable containing the id of the node to be called.
+ * Input Parameter - An integer variable containing the id of the node to be called. It should range between 1 and nodeCount
  * Return Value - A pointer to the node if it exists.
 */
     Node* getNode(int identity){
@@ -348,7 +417,7 @@ class ComplexNetwork{
             Node* newNode=new Node(i, randState%frac);
             this->nodeList.push_back(newNode);
         }
-        cout<<"Network Generated"<<endl;
+        cout<<"Nodes Generated"<<endl;
     }
 
     void generateSubNetwork(){
@@ -356,8 +425,8 @@ class ComplexNetwork{
             for(int neigh: node->neighbours){
                 if(neigh<0)
                     continue;
-                int rando=this->getRandomNumber(100);
-                if(relativeSize*50>rando){
+                double rando=this->getRandomNumber();
+                if(relativeSize<rando){
                     Node* neighbour=this->getNode(neigh);
                     node->inactivateEdge(neigh);
                     neighbour->inactivateEdge(node->getId());
@@ -446,7 +515,7 @@ class ComplexNetwork{
         double rando=this->getRandomNumber();
         Node* node;
         do{
-            long rand=this->getRandomNumber(this->nodeCount-1);
+            long rand=this->getRandomNumber(this->nodeCount-1); //We use this step and the next to get range of [1, nodeCount]
             rand++;
             node=this->getNode(rand);
             if(rando<=rewiringProbability){
@@ -628,6 +697,7 @@ class ComplexNetwork{
         cout<<"Difference = "<<difference<<endl;
     }
 
+/*This function verifies if our counts of the node states is correct. It will print an error message incase it isn't*/
     void recountStates(){
         int s1=0, s2=0;
         for(Node* node: nodeList){
@@ -639,11 +709,30 @@ class ComplexNetwork{
         if(s1!=this->stat0 || s2!=this->stat1)
             cout<<"Counting Mismatch"<<endl;
     }
+
+    void checkDegreeDistribution(){
+        int ar[2000];
+        for(int i=0;i<2000;i++)
+            ar[i]=0;
+        for(Node* node:nodeList){
+            int count=0;
+            for(int neigh:node->neighbours)
+                count++;
+            ar[count]++;
+            //cout<<count<<endl;
+        }
+
+        for(int i=0;i<2000;i++){
+            cout<<i<<" => "<<ar[i]<<endl;
+        }
+
+    }
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("facebookMedium", 100000, 100, 0.5, 0.7); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
+    ComplexNetwork* network=new ComplexNetwork("WattsStrogatz_25000_1", 100000, 50, 0.5, 0.8); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
     network->loadData();
     network->beginSimulation();
+    //network->checkDegreeDistribution();
     cout<<"Completed"<<endl;
 }

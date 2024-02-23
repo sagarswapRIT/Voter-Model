@@ -29,11 +29,13 @@ class Node{
     int id, size;
     bool state;
     std::vector<int> neighbours;
+    long timesCalled;
 
     Node(int identity, bool status){
         this->id = identity;
         this->state = status;
         this->size=0;
+        this->timesCalled=0;
     }
 
     bool getState(){
@@ -185,18 +187,108 @@ class Node{
     }
 
 /**
- * retuns the ID of the first in-active edge among the neighbours of this node.
+ * retuns the ID of a random in-active edge among the neighbours of this node.
  * Return Value: Returns the positive id of the in-active edge. Returns -1 if there are no inactvie edges.
 */
     int getInactiveEdgeID(){
+        std::vector<int> candidates;
         for(int n: neighbours){
             if(n<0)
-                return n*-1;
+                candidates.push_back(abs(n));
         }
-        cout<<"No Inactive Edge found";
-        return -1;
+        if(candidates.size()==0){
+            cout<<"No Inactive Edge found";
+            return -1;
+        }
+        else if(candidates.size()==1)
+            return candidates[0];
+        else{
+            for(;;){
+                for(int candidate: candidates){
+                    int rand=getRandomNumber(100);
+                    if(rand>80)
+                        return candidate;
+                }
+            }
+        }
+    }
+
+    int getRandomNumber(int limit){
+        std::random_device dev;
+        std::mt19937 rng(dev());
+        std::uniform_int_distribution<std::mt19937::result_type> dist6(0, limit); 
+        return dist6(rng);
     }
 };
+
+
+
+
+
+
+class Edge{
+    Node* nodeA;
+    Node* nodeB;
+    bool active;
+    public:
+    int nodeAID, nodeBID;
+    
+    Edge(Node* A, Node* B){
+        nodeA = A;
+        nodeB = B;
+        nodeAID = A->id;
+        nodeBID = B->id;
+        active = true;
+    }
+
+    bool getStatus(){
+        return active;
+    }
+
+    void activateEdge(){
+        if(active){
+            cout<<"Edge is already active!"<<endl;
+            return;
+        }
+        active=true;
+    }
+
+    void inactivateEdge(){
+        if(!active){
+            cout<<"Edge is already inactive!"<<endl;
+            return;
+        }
+        active=false;
+    }
+
+    void printNodes(){
+        cout<<"The nodes are "<<nodeAID<<" and "<<nodeBID<<" with status = "<<active<<endl;
+    }
+
+    Node* getNodeA(){
+        if(nodeA==nullptr){
+            cout<<"Node A reference is null"<<endl;
+            return nullptr;
+        }
+        else
+            return nodeA;
+    }
+
+    Node* getNodeB(){
+        if(nodeB==nullptr){
+            cout<<"Node B reference is null"<<endl;
+            return nullptr;
+        }
+        else
+            return nodeB;
+    }
+};
+
+
+
+
+
+
 
 /**
  * This is the ComplexNetwork class. It creates several instances of the Node class and stores their locations by reference so that we can access every node. 
@@ -216,19 +308,21 @@ class ComplexNetwork{
     int epochLimit, stepCount;
     double rewiringProbability, relativeSize;
     std::vector<Node*> nodeList;
+    std::vector<Edge*> edgeList;
     std::string inputFileName, outputFileName;
+    long rew=0, con=0;
 
-    ComplexNetwork(std::string infname, int epoch, int step, double vol, double relSize){
+    ComplexNetwork(std::string infname, int epoch, int step, double rewire, double relSize){
         cout<<"Constructor reached"<<endl;
-        this->inputFileName="../data/input/"+infname+".txt";
-        int n=vol*100.0;
-        this->outputFileName="../data/output/"+infname+"_"+std::to_string(n)+"_"+std::to_string(getRandomNumber(1000))+".txt";
+        this->inputFileName="../data/input/WattsStrogatzGraphs/"+infname+".txt";
+        int n=rewire*100.0;
+        this->outputFileName="../data/output//WattsStrogatzGraphs/"+infname+"_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(1000))+".txt";
         stat0=0;
         stat1=0;
         epochLimit=epoch;
         stepCount=step;
-        rewiringProbability=vol;
-        relativeSize=1-relSize;
+        rewiringProbability=rewire; 
+        relativeSize=relSize;
     }
 
 /**
@@ -244,7 +338,6 @@ class ComplexNetwork{
         string tp;
         int cc=0;
         while(getline(file, tp)){
-            //cout<< tp <<"\n";
             std::istringstream is(tp);
             int inputNode, outputNode;
             is>>inputNode;
@@ -259,19 +352,22 @@ class ComplexNetwork{
                 if(inputNode==outputNode)
                     continue; //prevents edges into self
                 Node* node1=getNode(inputNode);
-                node1->addNeighbour(outputNode);
                 Node* node2=getNode(outputNode);
+                Edge* edge=new Edge(node1, node2);
+                edgeList.push_back(edge);
+                node1->addNeighbour(outputNode);
                 node2->addNeighbour(inputNode);
             }        
         }
         cout<<"Data Loaded"<<endl;
         file.close();
         generateSubNetwork();
+        cout<<"Nodes = "<<this->nodeCount<<"\tEdges = "<<this->edgeCount<<endl;
     }
 
 /**
  * This function returns the reference to a node.
- * Input Parameter - An integer variable containing the id of the node to be called.
+ * Input Parameter - An integer variable containing the id of the node to be called. It should range between 1 and nodeCount
  * Return Value - A pointer to the node if it exists.
 */
     Node* getNode(int identity){
@@ -324,46 +420,17 @@ class ComplexNetwork{
             Node* newNode=new Node(i, randState%frac);
             this->nodeList.push_back(newNode);
         }
-        cout<<"Network Generated"<<endl;
+        cout<<"Nodes Generated"<<endl;
     }
 
     void generateSubNetwork(){
-        for(Node* node: nodeList){
-            for(int neigh: node->neighbours){
-                if(neigh<0)
-                    continue;
-                int rando=this->getRandomNumber(100);
-                if(relativeSize*50>rando){
-                    Node* neighbour=this->getNode(neigh);
-                    node->inactivateEdge(neigh);
-                    neighbour->inactivateEdge(node->getId());
-                    checkInactivity(node, neighbour);
-                }
+        for(Edge* edge: edgeList){
+            double rando=this->getRandomNumber();
+            if(relativeSize<rando){
+                inActivateEdge(edge);
             }
         }
         cout<<"Subnetwork Generated"<<endl;
-    }
-
-    void checkInactivity(Node* n1, Node* n2){
-        int v1=0, v2=0;
-        for(int x: n1->neighbours){
-            if(abs(x)==n2->getId())
-                v1=x;
-        }
-        for(int x: n2->neighbours){
-            if(abs(x)==n1->getId())
-                v2=x;
-        }
-
-        if(v1==0 || v2==0){
-            cout<<"Neighbour actually not present"<<endl;
-            cout<<n1->getId()<<" -> ";
-            n1->printAllNeighbours(100);
-            cout<<n2->getId()<<" -> ";
-            n2->printAllNeighbours(100);
-        }
-        else if((v1>0 && v2<0) || (v1<0 && v2>0))
-            cout<<"Activations are of different signs"<<endl;
     }
 
 /**
@@ -398,13 +465,13 @@ class ComplexNetwork{
             }
             if(epoch%10==0){
                 cout<<"Epoch No. "<<epoch<<endl;
-                checkInconsitentNeighbours();
             }
             discEdge=this->getActiveDiscordantEdgeCount();
             std::string summary=getSummary(epoch, discEdge);
             cout<<summary<<endl;
             outputFile << summary <<endl;
-            if(discEdge<0.01*this->edgeCount && !altEdgeSelectionAlgo){
+
+            if(discEdge<0.0005*this->edgeCount && !altEdgeSelectionAlgo){
                 altEdgeSelectionAlgo=true;
                 cout<<"Switching Algorithms"<<endl;
             }
@@ -419,28 +486,41 @@ class ComplexNetwork{
 */
     bool interact(){
         bool ideal=false;
+        double rando=this->getRandomNumber();
         Node* node;
         do{
-            long rand=this->getRandomNumber(this->nodeCount-1);
+            long rand=this->getRandomNumber(this->nodeCount-1); //We use this step and the next to get range of [1, nodeCount]
             rand++;
             node=this->getNode(rand);
-            if(node->hasInactiveEdge() && this->hasActiveDiscordantEdge(node))
-                ideal=true;
+            if(rando<=rewiringProbability){
+                if(node->hasInactiveEdge() && this->hasActiveDiscordantEdge(node))
+                    ideal=true;
+            }
+            else{
+                if(this->hasActiveDiscordantEdge(node))
+                    ideal=true;
+            }
         }while(!ideal);
-        double rando=this->getRandomNumber();
+        
         Node* neighbour=this->getActiveDiscordantEdge(node);
         if(rando<=rewiringProbability)
             this->rewire(node, neighbour);
         else 
             this->convince(node, neighbour);
-        return 0;
+        return false;
     }
 
     bool interactAlt(){
         std::vector<Node*> roster;
+        double rando=this->getRandomNumber();
         for(Node* node: nodeList){
-            if(node->hasInactiveEdge() && this->hasActiveDiscordantEdge(node)){
-                roster.push_back(node);
+            if(rando<=rewiringProbability){
+                if(node->hasInactiveEdge() && this->hasActiveDiscordantEdge(node))
+                    roster.push_back(node);
+            }
+            else{
+                if(this->hasActiveDiscordantEdge(node))
+                    roster.push_back(node);
             }
         }
         if(roster.size()<=1){
@@ -451,12 +531,12 @@ class ComplexNetwork{
         //cout<<"random "<<rand<<" "<<edges.size()<<endl;
         Node* node1=roster[rand];
         Node* node2=this->getActiveDiscordantEdge(node1);
-        double rando=this->getRandomNumber();
-        if(rand<=rewiringProbability)
+        if(rando<=rewiringProbability)
             this->rewire(node1, node2);
         else 
             this->convince(node1, node2);
-        return 0;
+
+        return false;
     }
 
 /**
@@ -465,6 +545,7 @@ class ComplexNetwork{
  *                      outputNode - pointer to the output node.
 */
     void convince(Node* inputNode, Node* outputNode){
+        this->con++;
         if(inputNode->getState()==outputNode->getState()){
             cout<<"Dingus"<<endl;
             return; //no convincing needed since they have same opinion
@@ -486,6 +567,7 @@ class ComplexNetwork{
  *                      outputNode - pointer to the output node.
 */
     void rewire(Node* adderNode, Node* deleterNode){
+        this->rew++;
         if(!adderNode->hasInactiveEdge())
             return;
         Node* inactiveNode=this->getNode(adderNode->getInactiveEdgeID());
@@ -495,13 +577,31 @@ class ComplexNetwork{
         deleterNode->inactivateEdge(adderNode->getId());
     }
 
+    void inActivateEdge(Edge* edge){
+        edge->inactivateEdge();
+        Node* nodeA=edge->getNodeA();
+        Node* nodeB=edge->getNodeB();
+        nodeA->inactivateEdge(edge->nodeBID);
+        nodeB->inactivateEdge(edge->nodeAID);
+    }
+
+    void activateEdge(Edge* edge){
+        edge->activateEdge();
+        Node* nodeA=edge->getNodeA();
+        Node* nodeB=edge->getNodeB();
+        nodeA->activateEdge(edge->nodeBID);
+        nodeB->activateEdge(edge->nodeAID);
+    }
+
 /**
- * Iterates through all the nodes and gives the number of discordant edges
+ * Iterates through all the nodes and gives the number of discordant edges except for nodes which have no inactive edges
  * Retrun : Long Integer containing the count of discordant edges
 */
     long getActiveDiscordantEdgeCount(){
         long count=0;
         for(Node* node: nodeList){
+            if(!node->hasInactiveEdge())
+                continue;
             for(int id:node->neighbours){
                 if(id<0)
                     continue;
@@ -540,23 +640,19 @@ class ComplexNetwork{
             if(neigh<0)
                 continue;
             Node* n=this->getNode(neigh);
-            if(n->getState()!=node->getState()){
-                //candidates.push_back(n);
-                return n;
-            }
+            if(n->getState()!=node->getState())
+                candidates.push_back(n);
         }
-        cout<<"Node unavailable"<<endl;
-        return nullptr;
-        // if(candidates.size()==0){
-        //     cout<<"Active discordant edge retrival failed"<<endl;
-        //     return nullptr;
-        // }
-        // else if(candidates.size()==1)
-        //     return candidates[0];
-        // else{
-        //     int rand=this->getRandomNumber(candidates.size()-1);
-        //     return candidates[rand];
-        // }
+        if(candidates.size()==0){
+            cout<<"Active discordant edge retrival failed"<<endl;
+            return nullptr;
+        }
+        else if(candidates.size()==1)
+            return candidates[0];
+        else{
+            int rand=this->getRandomNumber(candidates.size()-1);
+            return candidates[rand];
+        }
     }
 
 /**
@@ -591,6 +687,7 @@ class ComplexNetwork{
         cout<<"Difference = "<<difference<<endl;
     }
 
+/*This function verifies if our counts of the node states is correct. It will print an error message incase it isn't*/
     void recountStates(){
         int s1=0, s2=0;
         for(Node* node: nodeList){
@@ -602,13 +699,77 @@ class ComplexNetwork{
         if(s1!=this->stat0 || s2!=this->stat1)
             cout<<"Counting Mismatch"<<endl;
     }
+
+/**
+ * This function is to check if in the network, all active edges have '+'ve values in edgeList and all inactive edges have '-' values in edgeList
+*/
+    void checkEdges(){
+        bool fail=false;
+        for(Edge* edge:edgeList){
+            Node* nodeA=edge->getNodeA();
+            Node* nodeB=edge->getNodeB();
+            if(edge->getStatus()){
+                if(nodeA->neighbourCheck(edge->nodeBID) && nodeB->neighbourCheck(edge->nodeAID)){
+                    cout<<"Edge Check failed at ";
+                    edge->printNodes();
+                    fail=true;
+                }
+            }
+            else{
+                if(nodeA->neighbourCheck(edge->nodeBID) || nodeB->neighbourCheck(edge->nodeAID)){
+                    cout<<"Edge Check failed at ";
+                    edge->printNodes();
+                    fail=true;
+                }
+            }
+        }
+    }
+
+    //Code for debugging purposes
+    void checkInactivity(Node* n1, Node* n2){
+        int v1=0, v2=0;
+        for(int x: n1->neighbours){
+            if(abs(x)==n2->getId())
+                v1=x;
+        }
+        for(int x: n2->neighbours){
+            if(abs(x)==n1->getId())
+                v2=x;
+        }
+
+        if(v1==0 || v2==0){
+            cout<<"Neighbour actually not present"<<endl;
+            cout<<n1->getId()<<" -> ";
+            n1->printAllNeighbours(100);
+            cout<<n2->getId()<<" -> ";
+            n2->printAllNeighbours(100);
+        }
+        else if((v1>0 && v2<0) || (v1<0 && v2>0))
+            cout<<"Activations are of different signs"<<endl;
+    }
+
+/**
+ * Prints all the edges along with their status. Also prints  the number of active and inactive edges. For debugging pruposes.
+*/
+    void printAllEdges(){
+        int count=0, act=0, ina=0;
+        for(Edge* edge: edgeList){
+            edge->printNodes();
+            count++;
+            if(edge->getStatus())
+                act++;
+            else
+                ina++;
+        }
+        cout<<count<<" Edges in the Network, "<<act<<" are active and "<<ina<<" are inactive."<<endl;
+    }
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("facebook", 100000, 100, 0.5, 0.6); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
+    ComplexNetwork* network=new ComplexNetwork("WattsStrogatz_N50000_p1_k10", 100000, 200, 1, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
     network->loadData();
     network->beginSimulation();
+    //network->printAllEdges();
+    //network->checkDegreeDistribution();
     cout<<"Completed"<<endl;
 }
-
-//TODO: Plot number of pop vs discordant edges.
