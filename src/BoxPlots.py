@@ -5,7 +5,7 @@ import os
 
 folder_path = "./data/output/WattsStrogatzGraphs/"
 files=os.listdir(folder_path)
-p=0 #Define p incase for WattsStrogatz Graphs
+p=5 #Define p incase for WattsStrogatz Graphs
 data0=[]
 data10=[]
 data20=[]
