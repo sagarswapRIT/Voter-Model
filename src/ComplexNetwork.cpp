@@ -304,7 +304,7 @@ class Edge{
 class ComplexNetwork{
     public:
     //node status as false is related to stat0 while true is related to stat1
-    int nodeCount, edgeCount, stat0, stat1;
+    long nodeCount, edgeCount, stat0, stat1;
     int epochLimit, stepCount;
     double rewiringProbability, relativeSize;
     std::vector<Node*> nodeList;
@@ -314,9 +314,9 @@ class ComplexNetwork{
 
     ComplexNetwork(std::string infname, int epoch, int step, double rewire, double relSize){
         cout<<"Constructor reached"<<endl;
-        this->inputFileName="../data/input/WattsStrogatzGraphs/"+infname+".txt";
+        this->inputFileName="../data/input/RealWorld/"+infname+".txt";
         int n=rewire*100.0;
-        this->outputFileName="../data/output//WattsStrogatzGraphs/"+infname+"_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(1000))+".txt";
+        this->outputFileName="../data/output/RealWorld/facebookArtist/"+infname+"_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(10000))+".txt";
         stat0=0;
         stat1=0;
         epochLimit=epoch;
@@ -343,6 +343,7 @@ class ComplexNetwork{
             is>>inputNode;
             is>>outputNode;
             if(cc==0){
+                cout<<"Start Node Generation"<<endl;
                 generateNetwork(inputNode, outputNode);
                 cc++;
             }
@@ -449,8 +450,14 @@ class ComplexNetwork{
         for(int epoch=0; epoch<this->epochLimit; epoch++){
             for(int step=0; step<this->stepCount; step++){
                 bool areWeDone=false;
-                if(!altEdgeSelectionAlgo)
+                if(!altEdgeSelectionAlgo){
                     areWeDone=interact();
+                    if(areWeDone){
+                        areWeDone=false;
+                        altEdgeSelectionAlgo=true;
+                        cout<<"Switching Algorithms"<<endl;
+                    }
+                }
                 else
                     areWeDone=interactAlt();
                 if(areWeDone){
@@ -488,7 +495,9 @@ class ComplexNetwork{
         bool ideal=false;
         double rando=this->getRandomNumber();
         Node* node;
+        int tries=0;
         do{
+            rando=this->getRandomNumber();
             long rand=this->getRandomNumber(this->nodeCount-1); //We use this step and the next to get range of [1, nodeCount]
             rand++;
             node=this->getNode(rand);
@@ -500,8 +509,14 @@ class ComplexNetwork{
                 if(this->hasActiveDiscordantEdge(node))
                     ideal=true;
             }
-        }while(!ideal);
+            tries++;
+        }while(!ideal && tries<10000);
         
+        if(tries>=10000){
+            cout<<"Tries is greater with a value of "<<tries<<endl;
+            return true;
+        }
+
         Node* neighbour=this->getActiveDiscordantEdge(node);
         if(rando<=rewiringProbability)
             this->rewire(node, neighbour);
@@ -766,7 +781,7 @@ class ComplexNetwork{
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("WattsStrogatz_N50000_p10_k10", 100000, 200, 0.8, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
+    ComplexNetwork* network=new ComplexNetwork("facebookArtist", 100000, 200, 1, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
     network->loadData();
     network->beginSimulation();
     //network->printAllEdges();
