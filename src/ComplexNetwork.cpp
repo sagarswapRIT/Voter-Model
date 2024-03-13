@@ -57,6 +57,10 @@ class Node{
         return size;
     }
 
+    void setState(bool newState){
+        this->state=newState;
+    }
+
 /**
  * The next 2 functions activate/inactivate the edge. This is done by making the neighbour a negative value.
  * Inorder to activate the edge, we make the neighbour a positive value again.
@@ -296,8 +300,8 @@ class Edge{
  * The memeber variables are:
  *      nodeCount - An integer variable which keeps a count of the total Number of nodes in the network.
  *      edgeCount - An integer variable which keeps a count of the total number of edges in the network.
- *      stat0 - An integer variable which keeps a count of the number of nodes with state = 0
- *      stat1 - An integer variable which keeps a count of the number of nodes with state = 1
+ *      stat0 - An integer variable which keeps a count of the number of nodes with state = 0/false
+ *      stat1 - An integer variable which keeps a count of the number of nodes with state = 1/true
  *      nodeList - A vector of Node* type which contains pointers to every Node so that we can call them by reference.
  *      filename - A string object which contains the relative location of the data file which will be used to generate the network.
 */
@@ -311,12 +315,16 @@ class ComplexNetwork{
     std::vector<Edge*> edgeList;
     std::string inputFileName, outputFileName;
     long rew=0, con=0;
+    bool complexContagion=true;
 
     ComplexNetwork(std::string infname, int epoch, int step, double rewire, double relSize){
         cout<<"Constructor reached"<<endl;
-        this->inputFileName="../data/input/RealWorld/"+infname+".txt";
+        this->inputFileName="../data/input/WattsStrogatzGraphs/"+infname+".txt";
         int n=rewire*100.0;
-        this->outputFileName="../data/output/RealWorld/facebookArtist/"+infname+"_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(10000))+".txt";
+        if(this->complexContagion)
+            this->outputFileName="../data/output/WattsStrogatzGraphs/cc"+infname+"_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(10000))+".txt";    
+        else
+            this->outputFileName="../data/output/WattsStrogatzGraphs/"+infname+"_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(10000))+".txt";
         stat0=0;
         stat1=0;
         epochLimit=epoch;
@@ -517,11 +525,18 @@ class ComplexNetwork{
             return true;
         }
 
-        Node* neighbour=this->getActiveDiscordantEdge(node);
-        if(rando<=rewiringProbability)
+        if(rando<=rewiringProbability){
+            Node* neighbour=this->getActiveDiscordantEdge(node);
             this->rewire(node, neighbour);
-        else 
-            this->convince(node, neighbour);
+        }
+        else{ 
+            if(this->complexContagion){
+                Node* neighbour=this->getActiveDiscordantEdge(node);
+                this->convince(node, neighbour);
+            }
+            else
+                this->convinceComplexContagion(node);
+        }
         return false;
     }
 
@@ -545,11 +560,18 @@ class ComplexNetwork{
         int rand=this->getRandomNumber(roster.size()-1);
         //cout<<"random "<<rand<<" "<<edges.size()<<endl;
         Node* node1=roster[rand];
-        Node* node2=this->getActiveDiscordantEdge(node1);
-        if(rando<=rewiringProbability)
+        if(rando<=rewiringProbability){
+            Node* node2=this->getActiveDiscordantEdge(node1);
             this->rewire(node1, node2);
-        else 
-            this->convince(node1, node2);
+        }
+        else{ 
+            if(this->complexContagion){
+                Node* node2=this->getActiveDiscordantEdge(node1);
+                this->convince(node1, node2);
+            }
+            else
+                this->convinceComplexContagion(node1);
+        }
 
         return false;
     }
@@ -567,12 +589,41 @@ class ComplexNetwork{
         }
         outputNode->changeState();
         if(outputNode->getState()){
-            stat1++;
-            stat0--;
+            this->stat1++;
+            this->stat0--;
         }
         else{
-            stat0++;
-            stat1--;
+            this->stat0++;
+            this->stat1--;
+        }
+    }
+
+    void convinceComplexContagion(Node* node){
+        int op0=0, op1=0;
+        for(int neighbourID: node->neighbours){
+            if(neighbourID<0)
+                continue;
+            Node* neighbour=this->getNode(neighbourID);
+            if(neighbour->getState())
+                op1++;
+            else
+                op0++;
+        }
+        double switchToTrue=op1/(op1+op0);
+        double rando=this->getRandomNumber();
+        if(rando<switchToTrue){
+            if(!node->getState()){
+                node->changeState();
+                this->stat1++;
+                this->stat0--;
+            }
+        }
+        else{
+            if(node->getState()){
+                node->changeState();
+                this->stat0++;
+                this->stat1--;
+            }
         }
     }
 
@@ -781,7 +832,7 @@ class ComplexNetwork{
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("facebookArtist", 100000, 200, 1, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
+    ComplexNetwork* network=new ComplexNetwork("WattsStrogatz_N50000_p10_k10", 100000, 200, 0.9, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
     network->loadData();
     network->beginSimulation();
     //network->printAllEdges();
