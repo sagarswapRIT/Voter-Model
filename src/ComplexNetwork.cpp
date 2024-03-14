@@ -486,7 +486,7 @@ class ComplexNetwork{
             cout<<summary<<endl;
             outputFile << summary <<endl;
 
-            if(discEdge<0.0005*this->edgeCount && !altEdgeSelectionAlgo){
+            if(discEdge<0.0015*this->edgeCount && !altEdgeSelectionAlgo){
                 altEdgeSelectionAlgo=true;
                 cout<<"Switching Algorithms"<<endl;
             }
@@ -530,7 +530,7 @@ class ComplexNetwork{
             this->rewire(node, neighbour);
         }
         else{ 
-            if(this->complexContagion){
+            if(!this->complexContagion){
                 Node* neighbour=this->getActiveDiscordantEdge(node);
                 this->convince(node, neighbour);
             }
@@ -565,7 +565,7 @@ class ComplexNetwork{
             this->rewire(node1, node2);
         }
         else{ 
-            if(this->complexContagion){
+            if(!this->complexContagion){
                 Node* node2=this->getActiveDiscordantEdge(node1);
                 this->convince(node1, node2);
             }
@@ -832,7 +832,7 @@ class ComplexNetwork{
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("WattsStrogatz_N50000_p10_k10", 100000, 200, 0.9, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
+    ComplexNetwork* network=new ComplexNetwork("WattsStrogatz_N50000_p10_k10", 100000, 200, 0.2, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
     network->loadData();
     network->beginSimulation();
     //network->printAllEdges();
