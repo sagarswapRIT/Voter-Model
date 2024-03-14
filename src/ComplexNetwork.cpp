@@ -315,16 +315,16 @@ class ComplexNetwork{
     std::vector<Edge*> edgeList;
     std::string inputFileName, outputFileName;
     long rew=0, con=0;
-    bool complexContagion=true;
+    bool complexContagion=false;
 
     ComplexNetwork(std::string infname, int epoch, int step, double rewire, double relSize){
         cout<<"Constructor reached"<<endl;
         this->inputFileName="../data/input/WattsStrogatzGraphs/"+infname+".txt";
         int n=rewire*100.0;
         if(this->complexContagion)
-            this->outputFileName="../data/output/WattsStrogatzGraphs/cc"+infname+"_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(10000))+".txt";    
+            this->outputFileName="../data/output/WattsStrogatzGraphs/ComplexContagion/cc"+infname+"_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(10000))+".txt";    
         else
-            this->outputFileName="../data/output/WattsStrogatzGraphs/"+infname+"_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(10000))+".txt";
+            this->outputFileName="../data/output/WattsStrogatzGraphs/new"+infname+"_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(10000))+".txt";
         stat0=0;
         stat1=0;
         epochLimit=epoch;
@@ -486,7 +486,7 @@ class ComplexNetwork{
             cout<<summary<<endl;
             outputFile << summary <<endl;
 
-            if(discEdge<0.0015*this->edgeCount && !altEdgeSelectionAlgo){
+            if(discEdge<0.001*this->edgeCount && !altEdgeSelectionAlgo){
                 altEdgeSelectionAlgo=true;
                 cout<<"Switching Algorithms"<<endl;
             }
@@ -599,6 +599,7 @@ class ComplexNetwork{
     }
 
     void convinceComplexContagion(Node* node){
+        cout<<"lololol"<<endl;
         int op0=0, op1=0;
         for(int neighbourID: node->neighbours){
             if(neighbourID<0)
@@ -832,7 +833,7 @@ class ComplexNetwork{
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("WattsStrogatz_N50000_p10_k10", 100000, 200, 0.2, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
+    ComplexNetwork* network=new ComplexNetwork("WattsStrogatz_N50000_p10_k10", 100000, 200, 1, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
     network->loadData();
     network->beginSimulation();
     //network->printAllEdges();
