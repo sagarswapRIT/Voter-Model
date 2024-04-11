@@ -319,12 +319,12 @@ class ComplexNetwork{
 
     ComplexNetwork(std::string infname, int epoch, int step, double rewire, double relSize){
         cout<<"Constructor reached"<<endl;
-        this->inputFileName="../data/input/WattsStrogatzGraphs/"+infname+".txt";
+        this->inputFileName="../data/input/RealWorld/"+infname+".txt";
         int n=rewire*100.0;
         if(this->complexContagion)
-            this->outputFileName="../data/output/WattsStrogatzGraphs/ComplexContagion/cc"+infname+"_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(10000))+".txt";    
+            this->outputFileName="../data/output/RealWorld/facebookMedium/ComplexContagion/half/cc"+infname+"_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(10000))+".txt";    
         else
-            this->outputFileName="../data/output/WattsStrogatzGraphs/new"+infname+"_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(10000))+".txt";
+            this->outputFileName="../data/output/RealWorld/facebookMedium/SimpleContagion/half/"+infname+"_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(10000))+".txt";
         stat0=0;
         stat1=0;
         epochLimit=epoch;
@@ -475,13 +475,23 @@ class ComplexNetwork{
                     outputFile << summary <<endl;
                     this->recountStates();
                     cout<<"Simulation Completed!"<<endl;
-                    exit(0);
+                    outputFile.close();
+                    return;
                 }
             }
             if(epoch%10==0){
                 cout<<"Epoch No. "<<epoch<<endl;
             }
             discEdge=this->getActiveDiscordantEdgeCount();
+            if(discEdge==0){
+                std::string summary=getSummary(epoch, discEdge);
+                cout<<summary<<endl;
+                outputFile << summary <<endl;
+                this->recountStates();
+                cout<<"Simulation Completed!"<<endl;
+                outputFile.close();
+                return;
+            }
             std::string summary=getSummary(epoch, discEdge);
             cout<<summary<<endl;
             outputFile << summary <<endl;
@@ -599,7 +609,6 @@ class ComplexNetwork{
     }
 
     void convinceComplexContagion(Node* node){
-        cout<<"lololol"<<endl;
         int op0=0, op1=0;
         for(int neighbourID: node->neighbours){
             if(neighbourID<0)
@@ -833,10 +842,28 @@ class ComplexNetwork{
 };
 
 int main(){
-    ComplexNetwork* network=new ComplexNetwork("WattsStrogatz_N50000_p10_k10", 100000, 200, 1, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
-    network->loadData();
-    network->beginSimulation();
-    //network->printAllEdges();
-    //network->checkDegreeDistribution();
-    cout<<"Completed"<<endl;
+    //double rewiring[]={0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9};
+    double rewiring[]={0};
+    string network[]={"WattsStrogatz_N50000_p0_k10", "WattsStrogatz_N50000_p1_k10", "WattsStrogatz_N50000_p2_k10", "WattsStrogatz_N50000_p3_k10", "WattsStrogatz_N50000_p4_k10", "WattsStrogatz_N50000_p5_k10", "WattsStrogatz_N50000_p6_k10", "WattsStrogatz_N50000_p7_k10", "WattsStrogatz_N50000_p8_k10", "WattsStrogatz_N50000_p9_k10"};
+    // for(string nw:network){
+    //     for(double  r : rewiring){
+    //         ComplexNetwork* network=new ComplexNetwork(nw, 100, 200, r, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
+    //         network->loadData();
+    //         network->beginSimulation();
+    //         //network->printAllEdges();
+    //         //network->checkDegreeDistribution();
+    //         cout<<"Completed for r="<<r<<" and  Network="<<nw<<endl;
+    //         delete network;
+    //     }
+    // }
+
+    for(double  r : rewiring){
+        ComplexNetwork* network=new ComplexNetwork("facebookMedium", 100000, 200, r, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
+        network->loadData();
+        network->beginSimulation();
+        //network->printAllEdges();
+        //network->checkDegreeDistribution();
+        cout<<"Completed for r="<<r<<endl;
+        delete network;
+    }
 }
