@@ -34,6 +34,10 @@
 #Text Files
 *.txt
 *.csv
+*.tsv
 
 #Images
 *.png
+
+#Zip files
+*.zip

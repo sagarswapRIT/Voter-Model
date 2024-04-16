@@ -68,7 +68,7 @@ class Node{
 */
     void inactivateEdge(int neighbour){
         bool found=false;
-        for(int i=0;i<neighbours.size();i++){
+        for(int i=0;i<this->neighbours.size();i++){
             if(neighbours[i] == neighbour && neighbours[i]>=0){
                 neighbours[i]*=-1;
                 found=true;
@@ -86,7 +86,7 @@ class Node{
 
     void activateEdge(int neighbour){
         bool found=false;
-        for(int i=0;i<neighbours.size();i++){
+        for(int i=0;i<this->neighbours.size();i++){
             if(neighbours[i] == -1*neighbour && neighbours[i]<0){
                 neighbours[i]*=-1;
                 found=true;
@@ -207,21 +207,16 @@ class Node{
         else if(candidates.size()==1)
             return candidates[0];
         else{
-            for(;;){
-                for(int candidate: candidates){
-                    int rand=getRandomNumber(100);
-                    if(rand>80)
-                        return candidate;
-                }
-            }
+            int rand=getRandomNumber(candidates.size()-1);
+            return candidates[rand];
         }
     }
 
     int getRandomNumber(int limit){
         std::random_device dev;
         std::mt19937 rng(dev());
-        std::uniform_int_distribution<std::mt19937::result_type> dist6(0, limit); 
-        return dist6(rng);
+        std::uniform_int_distribution<int> dist(0, limit); 
+        return dist(rng);
     }
 };
 
@@ -310,14 +305,14 @@ class ComplexNetwork{
     //node status as false is related to stat0 while true is related to stat1
     long nodeCount, edgeCount, stat0, stat1;
     int epochLimit, stepCount;
-    double rewiringProbability, relativeSize;
+    double rewiringProbability, relativeSize, startingRatio;
     std::vector<Node*> nodeList;
     std::vector<Edge*> edgeList;
     std::string inputFileName, outputFileName;
     long rew=0, con=0;
-    bool complexContagion=false;
+    bool complexContagion;
 
-    ComplexNetwork(std::string infname, int epoch, int step, double rewire, double relSize){
+    ComplexNetwork(std::string infname, int epoch, int step, double rewire, double relSize, bool contagion, double ratio){
         cout<<"Constructor reached"<<endl;
         this->inputFileName="../data/input/RealWorld/"+infname+".txt";
         int n=rewire*100.0;
@@ -331,6 +326,8 @@ class ComplexNetwork{
         stepCount=step;
         rewiringProbability=rewire; 
         relativeSize=relSize;
+        complexContagion=contagion;
+        startingRatio=ratio;
     }
 
 /**
@@ -376,7 +373,7 @@ class ComplexNetwork{
 
 /**
  * This function returns the reference to a node.
- * Input Parameter - An integer variable containing the id of the node to be called. It should range between 1 and nodeCount
+ * Input Parameter - An integer variable containing the id of the node to be called. It should range between 1 and nodeCount (inclusive)
  * Return Value - A pointer to the node if it exists.
 */
     Node* getNode(int identity){
@@ -458,14 +455,8 @@ class ComplexNetwork{
         for(int epoch=0; epoch<this->epochLimit; epoch++){
             for(int step=0; step<this->stepCount; step++){
                 bool areWeDone=false;
-                if(!altEdgeSelectionAlgo){
-                    areWeDone=interact();
-                    if(areWeDone){
-                        areWeDone=false;
-                        altEdgeSelectionAlgo=true;
-                        cout<<"Switching Algorithms"<<endl;
-                    }
-                }
+                if(!altEdgeSelectionAlgo)
+                    altEdgeSelectionAlgo=interact();
                 else
                     areWeDone=interactAlt();
                 if(areWeDone){
@@ -516,9 +507,7 @@ class ComplexNetwork{
         int tries=0;
         do{
             rando=this->getRandomNumber();
-            long rand=this->getRandomNumber(this->nodeCount-1); //We use this step and the next to get range of [1, nodeCount]
-            rand++;
-            node=this->getNode(rand);
+            node=this->getRandomNode();
             if(rando<=rewiringProbability){
                 if(node->hasInactiveEdge() && this->hasActiveDiscordantEdge(node))
                     ideal=true;
@@ -530,7 +519,7 @@ class ComplexNetwork{
             tries++;
         }while(!ideal && tries<10000);
         
-        if(tries>=10000){
+        if(tries>=1000){
             cout<<"Tries is greater with a value of "<<tries<<endl;
             return true;
         }
@@ -563,7 +552,7 @@ class ComplexNetwork{
                     roster.push_back(node);
             }
         }
-        if(roster.size()<=1){
+        if(roster.size()<=1 || this->getActiveDiscordantEdgeCount()<=1){
             this->recountStates();
             return true;
         }
@@ -592,11 +581,6 @@ class ComplexNetwork{
  *                      outputNode - pointer to the output node.
 */
     void convince(Node* inputNode, Node* outputNode){
-        this->con++;
-        if(inputNode->getState()==outputNode->getState()){
-            cout<<"Dingus"<<endl;
-            return; //no convincing needed since they have same opinion
-        }
         outputNode->changeState();
         if(outputNode->getState()){
             this->stat1++;
@@ -621,7 +605,7 @@ class ComplexNetwork{
         }
         double switchToTrue=op1/(op1+op0);
         double rando=this->getRandomNumber();
-        if(rando<switchToTrue){
+        if(rando<=switchToTrue){
             if(!node->getState()){
                 node->changeState();
                 this->stat1++;
@@ -643,9 +627,6 @@ class ComplexNetwork{
  *                      outputNode - pointer to the output node.
 */
     void rewire(Node* adderNode, Node* deleterNode){
-        this->rew++;
-        if(!adderNode->hasInactiveEdge())
-            return;
         Node* inactiveNode=this->getNode(adderNode->getInactiveEdgeID());
         adderNode->activateEdge(inactiveNode->getId());
         inactiveNode->activateEdge(adderNode->getId());
@@ -679,7 +660,7 @@ class ComplexNetwork{
             if(!node->hasInactiveEdge())
                 continue;
             for(int id:node->neighbours){
-                if(id<0)
+                if(id<=0)
                     continue;
                 Node* neighbour=this->getNode(id);
                 if(node->getState()!=neighbour->getState())
@@ -696,7 +677,7 @@ class ComplexNetwork{
 */
     bool hasActiveDiscordantEdge(Node* node){
         for(int neigh: node->neighbours){
-            if(neigh<0)
+            if(neigh<=0)
                 continue;
             Node* n=this->getNode(neigh);
             if(n->getState()!=node->getState())
@@ -739,14 +720,26 @@ class ComplexNetwork{
     int getRandomNumber(int limit){
         std::random_device dev;
         std::mt19937 rng(dev());
-        std::uniform_int_distribution<std::mt19937::result_type> dist6(0, limit); 
-        return dist6(rng);
+        std::uniform_int_distribution<int> dist(0, limit); 
+        return dist(rng);
     }
 
     double getRandomNumber(){
         std::random_device rd;
         std::uniform_real_distribution<double> dist(0.0, 1.0);
         return dist(rd);
+    }
+
+    Node* getRandomNode(){
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<int> dist(1, this->nodeCount);
+        Node* node=this->nodeList[dist(gen)-1];
+        if(node==nullptr){
+            cout<<"getRandomNode() Error "<<dist(gen)-1<<endl;
+            return nullptr;
+        }
+        return node;
     }
 
     void checkInconsitentNeighbours(){
@@ -858,7 +851,7 @@ int main(){
     // }
 
     for(double  r : rewiring){
-        ComplexNetwork* network=new ComplexNetwork("facebookMedium", 100000, 200, r, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size
+        ComplexNetwork* network=new ComplexNetwork("facebookMedium", 100000, 200, r, 0.5, true, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size, complexContagion, starting opinion ratio
         network->loadData();
         network->beginSimulation();
         //network->printAllEdges();
