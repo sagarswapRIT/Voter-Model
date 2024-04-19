@@ -334,10 +334,9 @@ class ComplexNetwork{
             this->inputFileName="../data/input/WattsStrogatz/"+infname+".txt";
             this->outputFileName="../data/output/WattsStrogatz/"+cont+rat+pVal+"ws_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(10000))+".txt";
         }
-        else if(infname.substr(0, 5)=="Erdo"){
+        else if(infname.substr(0, 5)=="Erdos"){
 
         }
-        cout<<this->outputFileName<<endl;
         stat0=0;
         stat1=0;
         epochLimit=epoch;
@@ -355,7 +354,6 @@ class ComplexNetwork{
 */
     void loadData(){
         cout<<"Data Load Start"<<endl;
-        cout<<this->inputFileName<<endl;
         fstream file;
         file.open(this->inputFileName, ios::in);
         string tp;
@@ -384,8 +382,6 @@ class ComplexNetwork{
             }        
         }
         cout<<"Data Loaded"<<endl;
-        Node* n=getNode(57);
-        n->printAllNeighbours();
         file.close();
         generateSubNetwork();
         cout<<"Nodes = "<<this->nodeCount<<"\tEdges = "<<this->edgeCount<<endl;
@@ -437,13 +433,18 @@ class ComplexNetwork{
         this->nodeCount=nodeC;
         this->edgeCount=edgeC;
         for(int i=1; i<=nodeC; i++){
-            int randState=getRandomNumber(100);
-            int frac=2;
-            if(randState%frac==0)
+            double randState=getRandomNumber();
+            Node* newNode;
+            cout<<randState<<" "<<this->startingRatio<<endl;
+            if(randState<this->startingRatio==0){
                 stat0++;
-            else
+                newNode=new Node(i, false);
+            }
+            else{
                 stat1++;
-            Node* newNode=new Node(i, randState%frac);
+                newNode=new Node(i, true);
+            }
+            
             this->nodeList.push_back(newNode);
         }
         cout<<"Nodes Generated"<<endl;
@@ -854,7 +855,6 @@ class ComplexNetwork{
     }
 
     std::string getSubFolderName(double ratio){
-        cout<<ratio*10<<endl;
         switch((int)(ratio*10)) {
             case 1:
                 return "01/";
@@ -875,7 +875,7 @@ class ComplexNetwork{
 int main(){
     //double rewiring[]={0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9};
     double rewiring[]={0.2};
-    double start[]={0.5};
+    double start[]={0.4};
     string network[]={"WattsStrogatz_N50000_p0_k10", "WattsStrogatz_N50000_p1_k10", "WattsStrogatz_N50000_p2_k10", "WattsStrogatz_N50000_p3_k10", "WattsStrogatz_N50000_p4_k10", "WattsStrogatz_N50000_p5_k10", "WattsStrogatz_N50000_p6_k10", "WattsStrogatz_N50000_p7_k10", "WattsStrogatz_N50000_p8_k10", "WattsStrogatz_N50000_p9_k10"};
     // for(string nw:network){
     //     for(double  r : rewiring){
