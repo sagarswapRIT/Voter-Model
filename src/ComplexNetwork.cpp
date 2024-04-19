@@ -75,7 +75,7 @@ class Node{
                 break;
             }
             else if(neighbours[i] == -1*neighbour){
-                cout<<"Already Inactive"<<endl;
+                //cout<<"Already Inactive"<<endl;
                 found=true;
                 break;
             }
@@ -114,7 +114,7 @@ class Node{
             return true;
         }
         else{
-            cout<<this->getId()<<" and "<<newneigh<<" are already neighbours"<<endl;
+            //cout<<this->getId()<<" and "<<newneigh<<" are already neighbours"<<endl;
             return false;
         }
     }
@@ -254,7 +254,7 @@ class Edge{
 
     void inactivateEdge(){
         if(!active){
-            cout<<"Edge is already inactive!"<<endl;
+            //cout<<"Edge is already inactive!"<<endl;
             return;
         }
         active=false;
@@ -323,7 +323,6 @@ class ComplexNetwork{
             cont="ComplexContagion/";
         else
             cont="SimpleContagion/";
-        cout<<rat<<endl;
         if(infname.substr(0, 5)=="RealW"){
             std::string fname=infname.substr(10);
             this->inputFileName="../data/input/"+infname+".txt";
@@ -435,7 +434,6 @@ class ComplexNetwork{
         for(int i=1; i<=nodeC; i++){
             double randState=getRandomNumber();
             Node* newNode;
-            cout<<randState<<" "<<this->startingRatio<<endl;
             if(randState<this->startingRatio==0){
                 stat0++;
                 newNode=new Node(i, false);
@@ -874,8 +872,10 @@ class ComplexNetwork{
 
 int main(){
     //double rewiring[]={0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9};
-    double rewiring[]={0.2};
-    double start[]={0.4};
+    double rewiring[]={0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9};
+    double start[]={0.1, 0.2, 0.3, 0.4, 0.5};
+    int l1=sizeof(rewiring)/sizeof(rewiring[0]);
+    int l2=sizeof(start)/sizeof(start[0]);
     string network[]={"WattsStrogatz_N50000_p0_k10", "WattsStrogatz_N50000_p1_k10", "WattsStrogatz_N50000_p2_k10", "WattsStrogatz_N50000_p3_k10", "WattsStrogatz_N50000_p4_k10", "WattsStrogatz_N50000_p5_k10", "WattsStrogatz_N50000_p6_k10", "WattsStrogatz_N50000_p7_k10", "WattsStrogatz_N50000_p8_k10", "WattsStrogatz_N50000_p9_k10"};
     // for(string nw:network){
     //     for(double  r : rewiring){
@@ -888,14 +888,18 @@ int main(){
     //         delete network;
     //     }
     // }
-
+    int execution=0;
     for(double  r : rewiring){
-        ComplexNetwork* network=new ComplexNetwork("RealWorld/facebookMedium", 100000, 200, r, 0.5, true, start[0]); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size, complexContagion, starting opinion ratio
-        network->loadData();
-        network->beginSimulation();
-        //network->printAllEdges();
-        //network->checkDegreeDistribution();
-        cout<<"Completed for r="<<r<<endl;
-        delete network;
+        for(double st: start){
+            ComplexNetwork* network=new ComplexNetwork("RealWorld/astroPh", 100000, 200, r, 0.5, true, st); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size, complexContagion, starting opinion ratio
+            network->loadData();
+            network->beginSimulation();
+            //network->printAllEdges();
+            //network->checkDegreeDistribution();
+            cout<<"Completed for r="<<r<<" Execution = "<<execution<<"/"<<l1*l2<<endl;
+            //network->printAllEdges(500);
+            delete network;
+            execution++;
+        }
     }
 }
