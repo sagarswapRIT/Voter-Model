@@ -314,12 +314,30 @@ class ComplexNetwork{
 
     ComplexNetwork(std::string infname, int epoch, int step, double rewire, double relSize, bool contagion, double ratio){
         cout<<"Constructor reached"<<endl;
-        this->inputFileName="../data/input/RealWorld/"+infname+".txt";
         int n=rewire*100.0;
-        if(this->complexContagion)
-            this->outputFileName="../data/output/RealWorld/facebookMedium/ComplexContagion/half/cc"+infname+"_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(10000))+".txt";    
+        startingRatio=ratio;
+        std::string rat=getSubFolderName(ratio);
+        std::string cont;
+
+        if(contagion)
+            cont="ComplexContagion/";
         else
-            this->outputFileName="../data/output/RealWorld/facebookMedium/SimpleContagion/half/"+infname+"_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(10000))+".txt";
+            cont="SimpleContagion/";
+        cout<<rat<<endl;
+        if(infname.substr(0, 5)=="RealW"){
+            std::string fname=infname.substr(10);
+            this->inputFileName="../data/input/"+infname+".txt";
+            this->outputFileName="../data/output/"+infname+"/"+cont+""+rat+fname+"_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(10000))+".txt";
+        }
+        else if(infname.substr(0, 5)=="Watts"){
+            std::string pVal=infname.substr(infname.size()-2, 2)+"/";
+            this->inputFileName="../data/input/WattsStrogatz/"+infname+".txt";
+            this->outputFileName="../data/output/WattsStrogatz/"+cont+rat+pVal+"ws_r"+std::to_string(n)+"_"+std::to_string(getRandomNumber(10000))+".txt";
+        }
+        else if(infname.substr(0, 5)=="Erdo"){
+
+        }
+        cout<<this->outputFileName<<endl;
         stat0=0;
         stat1=0;
         epochLimit=epoch;
@@ -327,7 +345,6 @@ class ComplexNetwork{
         rewiringProbability=rewire; 
         relativeSize=relSize;
         complexContagion=contagion;
-        startingRatio=ratio;
     }
 
 /**
@@ -338,6 +355,7 @@ class ComplexNetwork{
 */
     void loadData(){
         cout<<"Data Load Start"<<endl;
+        cout<<this->inputFileName<<endl;
         fstream file;
         file.open(this->inputFileName, ios::in);
         string tp;
@@ -366,6 +384,8 @@ class ComplexNetwork{
             }        
         }
         cout<<"Data Loaded"<<endl;
+        Node* n=getNode(57);
+        n->printAllNeighbours();
         file.close();
         generateSubNetwork();
         cout<<"Nodes = "<<this->nodeCount<<"\tEdges = "<<this->edgeCount<<endl;
@@ -832,11 +852,30 @@ class ComplexNetwork{
         }
         cout<<count<<" Edges in the Network, "<<act<<" are active and "<<ina<<" are inactive."<<endl;
     }
+
+    std::string getSubFolderName(double ratio){
+        cout<<ratio*10<<endl;
+        switch((int)(ratio*10)) {
+            case 1:
+                return "01/";
+            case 2:
+                return "02/";
+            case 3:
+                return "03/";
+            case 4:
+                return "04/";
+            case 5:
+                return "05/";
+        }
+
+        return "NAHI";
+    }
 };
 
 int main(){
     //double rewiring[]={0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9};
-    double rewiring[]={0};
+    double rewiring[]={0.2};
+    double start[]={0.5};
     string network[]={"WattsStrogatz_N50000_p0_k10", "WattsStrogatz_N50000_p1_k10", "WattsStrogatz_N50000_p2_k10", "WattsStrogatz_N50000_p3_k10", "WattsStrogatz_N50000_p4_k10", "WattsStrogatz_N50000_p5_k10", "WattsStrogatz_N50000_p6_k10", "WattsStrogatz_N50000_p7_k10", "WattsStrogatz_N50000_p8_k10", "WattsStrogatz_N50000_p9_k10"};
     // for(string nw:network){
     //     for(double  r : rewiring){
@@ -851,7 +890,7 @@ int main(){
     // }
 
     for(double  r : rewiring){
-        ComplexNetwork* network=new ComplexNetwork("facebookMedium", 100000, 200, r, 0.5, true, 0.5); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size, complexContagion, starting opinion ratio
+        ComplexNetwork* network=new ComplexNetwork("RealWorld/facebookMedium", 100000, 200, r, 0.5, true, start[0]); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size, complexContagion, starting opinion ratio
         network->loadData();
         network->beginSimulation();
         //network->printAllEdges();
