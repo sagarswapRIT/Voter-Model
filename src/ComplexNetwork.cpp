@@ -312,7 +312,7 @@ class ComplexNetwork{
     long rew=0, con=0;
     bool complexContagion;
 
-    ComplexNetwork(std::string infname, int epoch, int step, double rewire, double relSize, bool contagion, double ratio){
+    ComplexNetwork(std::string infname, double rewire, bool contagion, double ratio){
         cout<<"Constructor reached"<<endl;
         int n=rewire*100.0;
         startingRatio=ratio;
@@ -338,10 +338,10 @@ class ComplexNetwork{
         }
         stat0=0;
         stat1=0;
-        epochLimit=epoch;
-        stepCount=step;
+        epochLimit=10000000;
+        stepCount=200;
         rewiringProbability=rewire; 
-        relativeSize=relSize;
+        relativeSize=0.5;
         complexContagion=contagion;
     }
 
@@ -506,7 +506,7 @@ class ComplexNetwork{
             cout<<summary<<endl;
             outputFile << summary <<endl;
 
-            if(discEdge<0.001*this->edgeCount && !altEdgeSelectionAlgo){
+            if(discEdge<100 && !altEdgeSelectionAlgo){
                 altEdgeSelectionAlgo=true;
                 cout<<"Switching Algorithms"<<endl;
             }
@@ -873,7 +873,8 @@ class ComplexNetwork{
 int main(){
     //double rewiring[]={0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9};
     double rewiring[]={0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9};
-    double start[]={0.1, 0.2, 0.3, 0.4, 0.5};
+    double start[]={0.1, 0.2, 0.3, 0.4, 0.5, 0.1, 0.2, 0.3, 0.4, 0.5};
+    bool contagi[]={false, true};
     int l1=sizeof(rewiring)/sizeof(rewiring[0]);
     int l2=sizeof(start)/sizeof(start[0]);
     string network[]={"WattsStrogatz_N50000_p0_k10", "WattsStrogatz_N50000_p1_k10", "WattsStrogatz_N50000_p2_k10", "WattsStrogatz_N50000_p3_k10", "WattsStrogatz_N50000_p4_k10", "WattsStrogatz_N50000_p5_k10", "WattsStrogatz_N50000_p6_k10", "WattsStrogatz_N50000_p7_k10", "WattsStrogatz_N50000_p8_k10", "WattsStrogatz_N50000_p9_k10"};
@@ -889,17 +890,19 @@ int main(){
     //     }
     // }
     int execution=0;
-    for(double  r : rewiring){
-        for(double st: start){
-            ComplexNetwork* network=new ComplexNetwork("RealWorld/astroPh", 100000, 200, r, 0.5, true, st); //epochs, steps in epoch, rewiring_factor, subgrah_rel_size, complexContagion, starting opinion ratio
-            network->loadData();
-            network->beginSimulation();
-            //network->printAllEdges();
-            //network->checkDegreeDistribution();
-            cout<<"Completed for r="<<r<<" Execution = "<<execution<<"/"<<l1*l2<<endl;
-            //network->printAllEdges(500);
-            delete network;
-            execution++;
+    for(bool c: contagi){
+        for(double  r : rewiring){
+            for(double st: start){
+                ComplexNetwork* network=new ComplexNetwork("RealWorld/gitInteractions",r, c, st); //rewiring_factor, complexContagion, starting opinion ratio
+                network->loadData();
+                network->beginSimulation();
+                execution++;
+                //network->printAllEdges();
+                //network->checkDegreeDistribution();
+                cout<<"Completed for r="<<r<<" Execution = "<<execution<<"/"<<l1*l2*2<<endl;
+                //network->printAllEdges(500);
+                delete network;
+            }
         }
     }
 }
