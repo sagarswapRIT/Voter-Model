@@ -310,16 +310,18 @@ class ComplexNetwork{
     std::vector<Edge*> edgeList;
     std::string inputFileName, outputFileName;
     long rew=0, con=0;
-    bool complexContagion;
+    bool complexContagion, pturbation;
 
-    ComplexNetwork(std::string infname, double rewire, bool contagion, double ratio){
+    ComplexNetwork(std::string infname, double rewire, bool contagion, bool pturb, double ratio){
         cout<<"Constructor reached"<<endl;
         int n=rewire*100.0;
         startingRatio=ratio;
         std::string rat=getSubFolderName(ratio);
         std::string cont;
 
-        if(contagion)
+        if(pturb)
+            cont="Pturbation/";
+        else if(contagion)
             cont="ComplexContagion/";
         else
             cont="SimpleContagion/";
@@ -343,6 +345,7 @@ class ComplexNetwork{
         rewiringProbability=rewire; 
         relativeSize=0.5;
         complexContagion=contagion;
+        pturbation=pturb;
     }
 
 /**
@@ -893,7 +896,7 @@ int main(){
     for(bool c: contagi){
         for(double  r : rewiring){
             for(double st: start){
-                ComplexNetwork* network=new ComplexNetwork("RealWorld/gitInteractions",r, c, st); //rewiring_factor, complexContagion, starting opinion ratio
+                ComplexNetwork* network=new ComplexNetwork("RealWorld/gitInteractions",r, c, true, st); //rewiring_factor, complexContagion, starting opinion ratio
                 network->loadData();
                 network->beginSimulation();
                 execution++;
