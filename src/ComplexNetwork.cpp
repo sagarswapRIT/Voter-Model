@@ -893,7 +893,7 @@ int main(){
     for(bool c: contagi){
         for(double  r : rewiring){
             for(double st: start){
-                ComplexNetwork* network=new ComplexNetwork("RealWorld/gitInteractions",r, c, st); //rewiring_factor, complexContagion, starting opinion ratio
+                ComplexNetwork* network=new ComplexNetwork("RealWorld/facebookArtist",r, c, st); //rewiring_factor, complexContagion, starting opinion ratio
                 network->loadData();
                 network->beginSimulation();
                 execution++;
